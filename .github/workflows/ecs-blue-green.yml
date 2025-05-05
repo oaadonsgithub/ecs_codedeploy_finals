@@ -55,13 +55,20 @@ jobs:
           }
           EOF
 
-      - name: Register and Deploy ECS task with CodeDeploy
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          codedeploy-application: frontend-deploy
-          codedeploy-deployment-group: frontend-deploy-group
-          codedeploy-deployment-config: CodeDeployDefault.ECSAllAtOnce
-          task-definition: frontend-task-def.json
-          service: frontend
-          cluster: application_cluster
-          wait-for-service-stability: true
+      - name: Zip deployment bundle
+        run: |
+          mkdir bundle
+          cp frontend-task-def.json appspec.yaml bundle/
+          cd bundle && zip ../code-deploy.zip * && cd ..
+
+      - name: Upload revision to S3
+        run: |
+          aws s3 cp code-deploy.zip s3://mynodeapplicationbucket/code.zip
+
+      - name: Trigger CodeDeploy deployment
+        run: |
+          aws deploy create-deployment \
+            --application-name frontend-deploy \
+            --deployment-group-name frontend-deploy-group \
+            --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
+            --revision "revisionType=S3,s3Location={bucket=mynodeapplicationbucket,key=code.zip,bundleType=zip}"
