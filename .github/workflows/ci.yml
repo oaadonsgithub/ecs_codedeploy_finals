@@ -15,8 +15,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+        uses: actions/checkout@v3
 
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.5
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-1
+
+          
       - name: Install Copywrite
         id: install
         uses: hashicorp/setup-copywrite@v1.0.0
@@ -26,3 +39,9 @@ jobs:
 
       - name: Run Copywrite Header Compliance
         run: copywrite headers --plan
+
+      - name: Make setup.sh executable
+        run: chmod +x scripts/setup.sh
+
+      - name: Run setup script
+        run: ./scripts/setup.sh

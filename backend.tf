@@ -8,7 +8,7 @@ terraform {
     organization = "oaa_dons"
 
     workspaces {
-      name = "terraform-github-actions"
+      name = "new_work_place"
     }
   }
 
