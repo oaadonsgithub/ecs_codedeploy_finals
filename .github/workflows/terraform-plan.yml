@@ -6,7 +6,7 @@ on:
 env:
   TF_CLOUD_ORGANIZATION: "oaa_dons"
   TF_API_TOKEN: "${{ secrets.TF_API_TOKEN }}"
-  TF_WORKSPACE: "terraform-github-actions"
+  TF_WORKSPACE: "new_work_place"
 
 
 jobs:
@@ -43,10 +43,10 @@ jobs:
           speculative: true
 
       - name: Terraform Init
-        run: terraform init 
+        run: terraform init -var-file="terraform.tfvars"
 
       - name: Terraform Validate
-        run: terraform validate 
+        run: terraform validate -var-file="terraform.tfvars"
 
       - name: Create Plan Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
