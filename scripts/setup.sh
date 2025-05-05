@@ -11,6 +11,9 @@ set -e
 # Change to the specified directory
 cd "$TERRAFORM_DIR"
 
+
+terraform login
+
 # Initialize Terraform
 terraform init
 
