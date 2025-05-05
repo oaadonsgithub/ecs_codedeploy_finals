@@ -1,10 +1,19 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-provider "aws" {
-  region = var.region  # or hardcode it temporarily: "us-west-1"
+terraform {
+  backend "remote" {
+    organization = "oaa_dons"
+
+    workspaces {
+      name = "new_work_place"
+    }
+  }
 }
 
+provider "aws" {
+  region = var.region
+}
 
 resource "aws_launch_template" "web" {
   name_prefix   = "web-launch-"
