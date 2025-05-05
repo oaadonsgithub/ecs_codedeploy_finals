@@ -42,11 +42,11 @@ jobs:
           directory: ${{ env.CONFIG_DIRECTORY }}
           speculative: true
 
-      - name: Terraform Init
-        run: terraform init -var-file="terraform.tfvars"
+      - name: Make setup.sh executable
+        run: chmod +x scripts/setup.sh
 
-      - name: Terraform Validate
-        run: terraform validate -var-file="terraform.tfvars"
+      - name: Run setup script
+        run: ./scripts/setup.sh
 
       - name: Create Plan Run
         uses: hashicorp/tfc-workflows-github/actions/create-run@v1.0.0
