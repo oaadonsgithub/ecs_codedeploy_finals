@@ -11,6 +11,20 @@ set -e
 # Change to the specified directory
 cd "$TERRAFORM_DIR"
 
+#!/bin/bash
+
+mkdir -p ~/.terraform.d
+
+cat > ~/.terraform.d/credentials.tfrc.json <<EOF
+{
+  "credentials": {
+    "app.terraform.io": {
+      "token": "dzlRkFmj5bSwLg.atlasv1.szQWDuBE7Jj8Tv3KPUpQOceBlsPzAiEOwyyD2HVBQSlGZOaikKz3A02NcR9cLDEEIAY"
+    }
+  }
+}
+EOF
+
 
 terraform login
 
