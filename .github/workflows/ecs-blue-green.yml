@@ -59,11 +59,11 @@ jobs:
         run: |
           mkdir bundle
           cp frontend-task-def.json appspec.yaml bundle/
-          cd bundle && zip ../code-deploy.zip * && cd ..
+          cd bundle && zip ../code.zip * && cd ..
 
       - name: Upload revision to S3
         run: |
-          aws s3 cp code-deploy.zip s3://mynodeapplicationbucket/code.zip
+          aws s3 cp code.zip s3://mynodeapplicationbucket/code.zip
 
       - name: Trigger CodeDeploy deployment
         run: |
