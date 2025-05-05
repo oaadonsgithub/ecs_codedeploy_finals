@@ -1,0 +1,13 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
+---
+version: 1
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: "REPLACE_TASK_DEFINITION"
+        LoadBalancerInfo:
+          ContainerName: "web"
+          ContainerPort: 80
