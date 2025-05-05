@@ -10,5 +10,8 @@ project {
   header_ignore = [
     # "vendors/**",
     # "**autogen**",
+    "**/*.md",
+    "**/scripts/**",
+    "**/.github/**"
   ]
 }

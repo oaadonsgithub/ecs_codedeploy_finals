@@ -1,3 +1,7 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
+
 output "alb_dns_name" {
   value = aws_lb.web_lb.dns_name
 }
