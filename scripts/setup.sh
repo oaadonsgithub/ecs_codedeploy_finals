@@ -2,27 +2,6 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
-set -euo pipefail
-
-info() {
-  printf "\r\033[00;35m$1\033[0m\n"
-}
-
-success() {
-  printf "\r\033[00;32m$1\033[0m\n"
-}
-
-fail() {
-  printf "\r\033[0;31m$1\033[0m\n"
-}
-
-divider() {
-  printf "\r\033[0;1m========================================================================\033[0m\n"
-}
-
-pause_for_confirmation() {
-  read -rsp $'Press any key to continue (ctrl-c to quit):\n' -n1 key
-}
 
 # Set up an interrupt handler so we can exit gracefully
 interrupt_count=0
@@ -69,31 +48,8 @@ if [ $installedTerraformVersion -lt $minimumTerraformVersion ]; then
   exit 1
 fi
 
-# Set up some variables we'll need
-HOST="${1:-app.terraform.io}"
-BACKEND_TF=$(dirname ${BASH_SOURCE[0]})/../backend.tf
-PROVIDER_TF=$(dirname ${BASH_SOURCE[0]})/../provider.tf
-TERRAFORM_VERSION=$(terraform version -json | jq -r '.terraform_version')
 
-# Check that we've already authenticated via Terraform in the static credentials
-# file.  Note that if you configure your token via a credentials helper or any
-# other method besides the static file, this script will not take that in to
-# account - but we do this to avoid embedding a Go binary in this simple script
-# and you hopefully do not need this Getting Started project if you're using one
-# already!
-CREDENTIALS_FILE="$HOME/.terraform.d/credentials.tfrc.json"
 
-# Credentials are located in App/Data/Roaming on Windows
-if [[ "$OSTYPE" =~ ^msys || "$OSTYPE" =~ ^cygwin || "$OSTYPE" =~ ^win32  ]]; then
-    CREDENTIALS_FILE="$APPDATA/terraform.d/credentials.tfrc.json"
-fi
-
-TOKEN=$(jq -j --arg h "$HOST" '.credentials[$h].token' "$CREDENTIALS_FILE")
-if [[ ! -f $CREDENTIALS_FILE || $TOKEN == null ]]; then
-  fail "We couldn't find a token in the Terraform credentials file at $CREDENTIALS_FILE."
-  fail "Please run 'terraform login', then run this setup script again."
-  exit 1
-fi
 
 
 
