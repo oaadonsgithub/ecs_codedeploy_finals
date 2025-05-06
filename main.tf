@@ -391,6 +391,9 @@ resource "aws_autoscaling_group" "web_asg" {
   max_size            = 2
   min_size            = 1
   vpc_zone_identifier = var.subnet_ids
+  target_group_arns         = [aws_lb_target_group.ec2_tg.arn]
+
+
   launch_template {
     id      = aws_launch_template.web.id
     version = "$Latest"
@@ -418,6 +421,45 @@ locals {
   target_groups = ["green", "blue"]
   active_index  = index(local.target_groups, var.active_color)
 }
+
+
+
+
+
+# For Fargate ECS service
+resource "aws_lb_target_group" "fargate_tg" {
+  name        = "fargate-tg"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"  
+
+  health_check {
+    path = "/"
+  }
+}
+
+# For EC2 Auto Scaling Group
+resource "aws_lb_target_group" "ec2_tg" {
+  name        = "ec2-tg"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "instance"  
+
+  health_check {
+    path = "/"
+  }
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -561,7 +603,7 @@ resource "aws_ecs_service" "karrio" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.web_tg[0].arn
+    target_group_arn = aws_lb_target_group.fargate_tg.arn
     container_name   = "karrio"
     container_port   = 3000
   }
