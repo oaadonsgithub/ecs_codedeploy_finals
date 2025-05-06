@@ -17,15 +17,6 @@ output "ecs_task_definition_arn" {
   value       = aws_ecs_task_definition.karrio_task.arn
 }
 
-output "load_balancer_dns" {
-  description = "Public DNS of the ALB"
-  value       = aws_lb.web.dns_name
-}
-
-output "alb_listener_arn" {
-  description = "ARN of the ALB HTTP listener"
-  value       = aws_lb_listener.l_80.arn
-}
 
 output "codedeploy_app_name" {
   description = "CodeDeploy application name"
