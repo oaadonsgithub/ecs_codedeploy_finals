@@ -461,7 +461,11 @@ resource "aws_ecs_service" "karrio" {
   }
 
   lifecycle {
-    ignore_changes = [task_definition]
+    ignore_changes = [
+      task_definition,
+      platform_version,
+      load_balancer
+    ]
   }
 }
 
