@@ -57,3 +57,8 @@ variable "sns_alert_email" {
   description = "Email address for CloudWatch alert notifications"
   type        = string
 }
+
+variable "ECR_REPO" {
+  description = "Full ECR image URI for the container"
+  type        = string
+}
