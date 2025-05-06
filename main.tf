@@ -262,7 +262,7 @@ resource "aws_iam_role_policy" "codedeploy_ecs" {
 # ----------------------------
 resource "aws_security_group" "alb_sg" {
   name        = "alb-sg"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = var.vpc_id
   description = "Allow HTTP access"
 
   ingress {
@@ -282,7 +282,7 @@ resource "aws_security_group" "alb_sg" {
 
 resource "aws_security_group" "ecs_sg" {
   name   = "ecs-sg"
-  vpc_id = module.vpc.vpc_id
+  vpc_id = var.vpc_id
 
   ingress {
     from_port       = 3000
@@ -326,6 +326,12 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_attach" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+resource "aws_iam_role_policy_attachment" "ecs_task_logs" {
+  role       = aws_iam_role.ecs_task_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+}
+
+
 # ----------------------------
 # 4. Application Load Balancer
 # ----------------------------
@@ -355,7 +361,7 @@ resource "aws_lb_target_group" "blue" {
   name        = "blue-tg"
   port        = 3000
   protocol    = "HTTP"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = var.vpc_id
   target_type = "ip"
 
   health_check {
@@ -372,7 +378,7 @@ resource "aws_lb_target_group" "green" {
   name        = "green-tg"
   port        = 3000
   protocol    = "HTTP"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = var.vpc_id
   target_type = "ip"
 
   health_check {
@@ -388,6 +394,14 @@ resource "aws_lb_target_group" "green" {
 # ----------------------------
 # 6. ECS Task Definition
 # ----------------------------
+
+resource "aws_cloudwatch_log_group" "karrio" {
+  name              = "/ecs/karrio"
+  retention_in_days = 14
+}
+
+
+
 resource "aws_ecs_task_definition" "karrio_task" {
   family                   = "karrio-task"
   cpu                      = "256"
@@ -399,7 +413,7 @@ resource "aws_ecs_task_definition" "karrio_task" {
   container_definitions = jsonencode([
     {
       name      = "karrio"
-      image     = "123456789012.dkr.ecr.us-west-2.amazonaws.com/karrio:latest"
+      image     = "${var.aws_account_id}.dkr.ecr.${var.aws_account_region}.amazonaws.com/karrio:latest"
       portMappings = [
         {
           containerPort = 3000
@@ -407,6 +421,14 @@ resource "aws_ecs_task_definition" "karrio_task" {
           protocol      = "tcp"
         }
       ]
+       logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.karrio.name,
+          awslogs-region        = "us-west-2",
+          awslogs-stream-prefix = "karrio"
+        }
+      }
     }
   ])
 }
@@ -426,7 +448,7 @@ resource "aws_ecs_service" "karrio" {
   }
 
   network_configuration {
-    subnets         = module.vpc.public_subnets
+    subnets         = var.subnet_ids
     security_groups = [aws_security_group.ecs_sg.id]
     assign_public_ip = true
   }
@@ -485,136 +507,50 @@ resource "aws_codedeploy_deployment_group" "ecs_dg" {
 
 
 resource "aws_ecr_repository" "web_ecr_repo" {
-  name         = "web-ecr-repository"
+  name         = "karrio"
   force_delete = true
 }
 
-resource "aws_ecs_cluster" "web_cluster" {
-  name = "application_cluster"
+
+# ----------------------------
+# Setup alarm and Notification
+# ----------------------------
+
+resource "aws_sns_topic" "ecs_alerts" {
+  name = "ecs-alerts-topic"
 }
 
-resource "aws_cloudwatch_log_group" "main" {
-  name = "/ecs/frontend"
+resource "aws_sns_topic_subscription" "email_alert" {
+  topic_arn = aws_sns_topic.ecs_alerts.arn
+  protocol  = "email"
+  endpoint  = "oaaderibigbe@dons.usfca.edu" # Replace with your email
 }
 
 
-resource "aws_ecs_service" "frontend" {
-  name                               = "frontend"
-  cluster                            = aws_ecs_cluster.web_cluster.id
-  task_definition                    = aws_ecs_task_definition.frontend_task.arn
-  deployment_minimum_healthy_percent = 50
-  deployment_maximum_percent         = 200
-  health_check_grace_period_seconds  = 300
-  launch_type                        = "EC2"
-  scheduling_strategy                = "REPLICA"
-  desired_count                      = 2
-  force_new_deployment               = true
+resource "aws_cloudwatch_log_metric_filter" "ecs_errors" {
+  name           = "ecs-error-filter"
+  log_group_name = aws_cloudwatch_log_group.karrio.name
+  pattern        = "ERROR"
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.web_tg[0].arn
-    container_name   = "web"
-    container_port   = 80
-  }
-
-  deployment_controller {
-    type = "CODE_DEPLOY"
-  }
-
-  depends_on = [
-    aws_lb_listener.l_443,
-    aws_lb_listener.l_8080
-  ]
-
-  lifecycle {
-    ignore_changes = [task_definition, desired_count, load_balancer]
+  metric_transformation {
+    name      = "ECSAppErrors"
+    namespace = "KarrioApp"
+    value     = "1"
   }
 }
 
 
-resource "aws_ecs_task_definition" "frontend_task" {
-  family = "frontend-task"
+resource "aws_cloudwatch_metric_alarm" "ecs_error_alarm" {
+  alarm_name          = "ecs-error-alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "ECSAppErrors"
+  namespace           = "KarrioApp"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = 1
 
-  container_definitions = jsonencode([{
-    name      = "web"
-    image     = "${var.aws_account_id}.dkr.ecr.${var.aws_account_region}.amazonaws.com/web-ecr-repository:latest"
-    essential = true
-    portMappings = [{ containerPort = 80 }]
-    logConfiguration = {
-      logDriver = "awslogs"
-      options = {
-        awslogs-group         = aws_cloudwatch_log_group.main.name
-        awslogs-stream-prefix = "ecs"
-        awslogs-region        = var.region
-      }
-    }
-  }])
-
-  requires_compatibilities = ["EC2"]
-  memory                   = 1800
-  cpu                      = 512
-  execution_role_arn       = aws_iam_role.web_task_role.arn
+  alarm_description   = "Triggers if ECS app logs an ERROR"
+  alarm_actions       = [aws_sns_topic.ecs_alerts.arn]
 }
 
-
-
-
-
-
-
-
-resource "aws_codedeploy_app" "frontend" {
-  compute_platform = "ECS"
-  name             = "frontend-deploy"
-}
-
-resource "aws_codedeploy_deployment_group" "frontend" {
-  app_name               = aws_codedeploy_app.frontend.name
-  deployment_group_name  = "frontend-deploy-group"
-  deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
-  service_role_arn       = aws_iam_role.codedeploy.arn
-
-  blue_green_deployment_config {
-    deployment_ready_option {
-      action_on_timeout = "CONTINUE_DEPLOYMENT"
-    }
-
-    terminate_blue_instances_on_deployment_success {
-      action                           = "TERMINATE"
-      termination_wait_time_in_minutes = 1
-    }
-  }
-
-  ecs_service {
-    cluster_name = aws_ecs_cluster.web_cluster.name
-    service_name = aws_ecs_service.frontend.name
-  }
-
-  deployment_style {
-    deployment_option = "WITH_TRAFFIC_CONTROL"
-    deployment_type   = "BLUE_GREEN"
-  }
-
-  auto_rollback_configuration {
-    enabled = true
-    events  = ["DEPLOYMENT_FAILURE"]
-  }
-
-  load_balancer_info {
-  target_group_pair_info {
-    target_group {
-      name = aws_lb_target_group.web_tg[0].name # Blue
-    }
-    target_group {
-      name = aws_lb_target_group.web_tg[1].name # Green
-    }
-
-    prod_traffic_route {
-      listener_arns = [aws_lb_listener.l_443.arn]
-    }
-
-    test_traffic_route {
-      listener_arns = [aws_lb_listener.l_8080.arn]
-    }
-  }
-}
-}
