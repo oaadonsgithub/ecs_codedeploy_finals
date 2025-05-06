@@ -383,7 +383,7 @@ resource "aws_iam_role" "web" {
 }
 
 resource "aws_iam_role_policy_attachment" "web_attach" {
-  role       = aws_iam_role.qa_instance.name
+  role       = aws_iam_role.web.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
 
@@ -402,7 +402,7 @@ resource "aws_autoscaling_group" "web_asg" {
   min_size            = 1
   vpc_zone_identifier = var.subnet_ids
   launch_template {
-    id      = aws_launch_template.qa_instance.id
+    id      = aws_launch_template.web.id
     version = "$Latest"
   }
   health_check_type = "EC2"
@@ -415,11 +415,11 @@ resource "aws_autoscaling_group" "web_asg" {
   }
 }
 
-resource "aws_lb" "qa_lb" {
+resource "aws_lb" "web_lb" {
   name               = "web-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.web_sg.id]
+  security_groups    = [aws_security_group.alb_sg.id]
   subnets            = var.subnet_ids
   enable_deletion_protection = false
 }
