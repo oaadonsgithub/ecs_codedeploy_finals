@@ -503,7 +503,22 @@ resource "aws_codedeploy_deployment_group" "ecs_dg" {
     enabled = true
     events  = ["DEPLOYMENT_FAILURE"]
   }
-}
+
+  blue_green_deployment_config {
+    deployment_ready_option {
+      action_on_timeout = "CONTINUE_DEPLOYMENT"
+      wait_time_in_minutes = 0
+    }
+
+    green_fleet_provisioning_option {
+      action = "DISCOVER_EXISTING"
+    }
+
+    terminate_blue_instances_on_deployment_success {
+      action = "TERMINATE"
+      termination_wait_time_in_minutes = 5
+    }
+  }
 
 
 
