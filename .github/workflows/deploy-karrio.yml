@@ -41,7 +41,7 @@ jobs:
           ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
           IMAGE_NAME: ${{ secrets.ECR_REPO }}
         run: |
-          IMAGE_URI=$ECR_REGISTRY/$IMAGE_NAME:${{ env.IMAGE_TAG }}
+          IMAGE_URI=$ECR_REGISTRY/$IMAGE_NAME:${{ github.sha }}
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
 
