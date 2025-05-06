@@ -513,45 +513,4 @@ resource "aws_ecr_repository" "web_ecr_repo" {
 }
 
 
-# ----------------------------
-# Setup alarm and Notification
-# ----------------------------
-
-resource "aws_sns_topic" "ecs_alerts" {
-  name = "ecs-alerts-topic"
-}
-
-resource "aws_sns_topic_subscription" "email_alert" {
-  topic_arn = aws_sns_topic.ecs_alerts.arn
-  protocol  = "email"
-  endpoint  = "oaaderibigbe@dons.usfca.edu" # Replace with your email
-}
-
-
-resource "aws_cloudwatch_log_metric_filter" "ecs_errors" {
-  name           = "ecs-error-filter"
-  log_group_name = aws_cloudwatch_log_group.karrio.name
-  pattern        = "ERROR"
-
-  metric_transformation {
-    name      = "ECSAppErrors"
-    namespace = "KarrioApp"
-    value     = "1"
-  }
-}
-
-
-resource "aws_cloudwatch_metric_alarm" "ecs_error_alarm" {
-  alarm_name          = "ecs-error-alarm"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = 1
-  metric_name         = "ECSAppErrors"
-  namespace           = "KarrioApp"
-  period              = 60
-  statistic           = "Sum"
-  threshold           = 1
-
-  alarm_description   = "Triggers if ECS app logs an ERROR"
-  alarm_actions       = [aws_sns_topic.ecs_alerts.arn]
-}
 
