@@ -1,15 +1,14 @@
-name:  Deploy via CodeDeploy
+name: Deploy via CodeDeploy
 
 on:
   workflow_run:
-    workflows: ["Build and Push Docker Image to ECR"]        # must match the name in the infra.yml file
+    workflows: ["Build and Push Docker Image to ECR"]
     types:
       - completed
 
-
 jobs:
   codedeploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # only run if infra succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -27,29 +26,28 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Extract branch name
-        shell: bash
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        id: extract_branch
-      - run: echo ${{ steps.extract_branch.outputs.branch }} ${{ github.repository }}
-
       - name: Create code ZIP for main
-        if: ${{ steps.extract_branch.outputs.branch == 'main' }}
-        run: aws deploy push --application-name frontend-deploy --description "This is a revision for the application mynodeapp" --ignore-hidden-files --s3-location s3://mynodeapplicationbucket/code.zip --source .
-      
+        if: ${{ github.event.workflow_run.head_branch == 'main' }}
+        run: |
+          aws deploy push \
+            --application-name frontend-deploy \
+            --description "This is a revision for the application mynodeapp" \
+            --ignore-hidden-files \
+            --s3-location s3://mynodeapplicationbucket/code.zip \
+            --source .
+
       - name: Deploy main branch
-        if: ${{ steps.extract_branch.outputs.branch == 'main' }}
+        if: ${{ github.event.workflow_run.head_branch == 'main' }}
         run: |
           aws deploy create-deployment \
-             --application-name frontend-deploy \
-             --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
-             --deployment-group-name frontend-deploy-group \
-             --revision '{
+            --application-name frontend-deploy \
+            --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
+            --deployment-group-name frontend-deploy-group \
+            --revision '{
               "revisionType": "S3",
               "s3Location": {
-               "bucket": "mynodeapplicationbucket",
-               "key": "code.zip",
-               "bundleType": "zip"
-            }
-          }'
-
+                "bucket": "mynodeapplicationbucket",
+                "key": "code.zip",
+                "bundleType": "zip"
+              }
+            }'
