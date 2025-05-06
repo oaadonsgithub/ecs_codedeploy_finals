@@ -611,19 +611,20 @@ resource "aws_codedeploy_deployment_group" "ecs_dg" {
   }
 
   load_balancer_info {
-    target_group_pair_info {
-      target_group {
-        name = aws_lb_target_group_blue.name
-      }
-      target_group {
-        name = aws_lb_target_group_green.name
-      }
+  target_group_pair_info {
+    target_group {
+      name = aws_lb_target_group.web_tg[0].name
+    }
+    target_group {
+      name = aws_lb_target_group.web_tg[1].name
+    }
 
-      prod_traffic_route {
-        listener_arns = [aws_lb_listener.l_80.arn]
-      }
+    prod_traffic_route {
+      listener_arns = [aws_alb_listener.l_80.arn]
     }
   }
+}
+
 
   auto_rollback_configuration {
     enabled = true
