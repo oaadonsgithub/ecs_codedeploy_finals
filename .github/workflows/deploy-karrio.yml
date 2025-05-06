@@ -51,23 +51,22 @@ jobs:
           TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://taskdef.rendered.json | jq -r '.taskDefinition.taskDefinitionArn')
           echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
 
-      - name: Render AppSpec for CodeDeploy
+      - name: Render appspec.yml with task definition ARN
         run: |
-          sed "s|<TASK_DEFINITION_PLACEHOLDER>|$TASK_DEF_ARN|g" appspec.yml > appspec.rendered.yml
-
-      - name: Push AppSpec bundle to S3
-        env:
-            CODEDEPLOY_BUCKET: ${{ secrets.CODEDEPLOY_BUCKET }}
+            sed "s|<TASK_DEFINITION_PLACEHOLDER>|${{ env.TASK_DEF_ARN }}|g" appspec.yml > appspec.rendered.yml
+        
+      - name: Prepare and upload CodeDeploy revision to S3
         run: |
-          mkdir codedeploy_bundle
-          cp appspec.rendered.yml codedeploy_bundle/appspec.yml
-          zip -r code.zip codedeploy_bundle
-          aws s3 cp code.zip s3://$CODEDEPLOY_BUCKET/code-${{ github.sha }}.zip
-
-      - name: Create CodeDeploy Deployment
+            mkdir codedeploy_bundle
+            cp appspec.rendered.yml codedeploy_bundle/appspec.yml
+            zip -r code.zip codedeploy_bundle
+            aws s3 cp code.zip s3://${{ secrets.CODEDEPLOY_BUCKET }}/code-${{ github.sha }}.zip
+        
+      - name: Trigger CodeDeploy deployment
         run: |
-          aws deploy create-deployment \
-            --application-name ${{ env.CODEDEPLOY_APP }} \
-            --deployment-group-name ${{ env.DEPLOYMENT_GROUP }} \
-            --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
-            --revision "revisionType=S3,s3Location={bucket=${{ secrets.CODEDEPLOY_BUCKET }},key=code-${{ github.sha }}.zip,bundleType=zip}"
+            aws deploy create-deployment \
+              --application-name karrio-cd-app \
+              --deployment-group-name karrio-deploy-group \
+              --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
+              --revision "revisionType=S3,s3Location={bucket=${{ secrets.CODEDEPLOY_BUCKET }},key=code-${{ github.sha }}.zip,bundleType=zip}"
+        
