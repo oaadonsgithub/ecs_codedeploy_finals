@@ -345,7 +345,7 @@ resource "aws_lb_listener" "http" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group_blue.arn
+    target_group_arn = aws_lb_target_group.blue.arn
   }
 }
 
@@ -449,7 +449,7 @@ resource "aws_ecs_service" "karrio" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group_blue.arn
+    target_group_arn = aws_lb_target_group.blue.arn
     container_name   = "karrio"
     container_port   = 3000
   }
