@@ -483,6 +483,12 @@ resource "aws_codedeploy_deployment_group" "ecs_dg" {
   service_role_arn       = "arn:aws:iam::537124950459:role/CodeDeploy-Service-role"
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
 
+
+  deployment_style {
+    deployment_type   = "BLUE_GREEN"
+    deployment_option = "WITH_TRAFFIC_CONTROL"
+  }
+
   ecs_service {
     cluster_name = aws_ecs_cluster.this.name
     service_name = aws_ecs_service.karrio.name
