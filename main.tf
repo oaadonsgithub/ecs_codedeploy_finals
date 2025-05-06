@@ -571,7 +571,7 @@ resource "aws_ecs_service" "karrio" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.web_tg.arn
+    target_group_arn = aws_lb_target_group.web_tg[0].arn
     container_name   = "karrio"
     container_port   = 3000
   }
