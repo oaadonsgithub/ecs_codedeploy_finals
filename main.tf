@@ -33,6 +33,8 @@ resource "aws_iam_role" "ecs_role" {
   })
 }
 
+
+#
 resource "aws_iam_role_policy" "ecs_policy" {
   name   = "ecs_policy"
   role   = aws_iam_role.ecs_role.id
