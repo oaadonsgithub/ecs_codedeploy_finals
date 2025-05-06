@@ -520,7 +520,7 @@ resource "aws_codedeploy_deployment_group" "ecs_dg" {
     }
   }
 
-
+}
 
 resource "aws_ecr_repository" "web_ecr_repo" {
   name         = "karrio"
