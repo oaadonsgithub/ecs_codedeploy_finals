@@ -83,7 +83,11 @@ resource "aws_iam_policy" "ecs_task_definition_policy" {
           "ecs:RegisterTaskDefinition",
           "ecs:DescribeTaskDefinition",
           "ecs:UpdateService",
-          "ecs:DescribeServices"
+          "ecs:DescribeServices",
+          "sns:CreateTopic",
+          "sns:Subscribe",
+          "sns:Publish",
+          "sns:GetTopicAttributes"
         ]
         Resource = "*"
       }
