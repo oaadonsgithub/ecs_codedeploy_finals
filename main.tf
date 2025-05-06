@@ -344,7 +344,7 @@ resource "aws_launch_template" "web" {
 
   network_interfaces {
     associate_public_ip_address = true
-    security_groups             = [aws_security_group.alb_sg.id]
+    security_groups             = [aws_security_group.web_sg.id]
   }
 
   user_data = base64encode(<<-EOF
@@ -409,7 +409,7 @@ resource "aws_lb" "web_lb" {
   name               = "web-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb_sg.id]
+  security_groups    = [aws_security_group.web_sg.id]
   subnets            = var.subnet_ids
   enable_deletion_protection = false
 }
@@ -556,7 +556,7 @@ resource "aws_ecs_service" "karrio" {
 
   network_configuration {
     subnets         = var.subnet_ids
-    security_groups = [aws_security_group.ecs_sg.id]
+    security_groups = [aws_security_group.web_sg.id]
     assign_public_ip = true
   }
 
