@@ -613,14 +613,14 @@ resource "aws_codedeploy_deployment_group" "ecs_dg" {
   load_balancer_info {
     target_group_pair_info {
       target_group {
-        name = aws_lb_target_group.blue.name
+        name = aws_lb_target_group_blue.name
       }
       target_group {
-        name = aws_lb_target_group.green.name
+        name = aws_lb_target_group_green.name
       }
 
       prod_traffic_route {
-        listener_arns = [aws_lb_listener.http.arn]
+        listener_arns = [aws_lb_listener.l_80.arn]
       }
     }
   }
