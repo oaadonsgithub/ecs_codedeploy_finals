@@ -199,12 +199,7 @@ data "aws_iam_policy_document" "codedeploy" {
       "ecs:RegisterTaskDefinition",
       "ecs:UpdateService"
     ]
-    resources = [
-      aws_ecs_service.frontend.id,
-      aws_codedeploy_deployment_group.frontend.arn,
-      "arn:aws:codedeploy:${var.region}:${var.aws_account_id}:deploymentconfig:*",
-      aws_codedeploy_app.frontend.arn
-    ]
+    resources = ["*"]
   }
 }
 
@@ -339,7 +334,7 @@ resource "aws_lb" "main" {
   name               = "ecs-bluegreen-alb"
   internal           = false
   load_balancer_type = "application"
-  subnets            = module.vpc.public_subnets
+  subnets            = var.subnet_ids
   security_groups    = [aws_security_group.alb_sg.id]
 }
 
@@ -486,10 +481,10 @@ resource "aws_codedeploy_deployment_group" "ecs_dg" {
   load_balancer_info {
     target_group_pair_info {
       target_group {
-        name = aws_lb_target_group_blue.name
+        name = aws_lb_target_group.blue.name
       }
       target_group {
-        name = aws_lb_target_group_green.name
+        name = aws_lb_target_group.green.name
       }
 
       prod_traffic_route {

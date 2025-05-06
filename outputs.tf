@@ -2,14 +2,42 @@
 // SPDX-License-Identifier: MPL-2.0
 
 
-output "alb_dns_name" {
-  value = aws_lb.web_lb.dns_name
+output "ecs_cluster_name" {
+  description = "The name of the ECS cluster"
+  value       = aws_ecs_cluster.this.name
 }
 
 output "ecs_service_name" {
-  value = aws_ecs_service.frontend.name
+  description = "The name of the ECS service"
+  value       = aws_ecs_service.karrio.name
 }
 
-output "ecs_cluster_name" {
-  value = aws_ecs_cluster.web_cluster.name
+output "ecs_task_definition_arn" {
+  description = "ARN of the ECS task definition"
+  value       = aws_ecs_task_definition.karrio_task.arn
+}
+
+output "load_balancer_dns" {
+  description = "Public DNS of the ALB"
+  value       = aws_lb.main.dns_name
+}
+
+output "alb_listener_arn" {
+  description = "ARN of the ALB HTTP listener"
+  value       = aws_lb_listener.http.arn
+}
+
+output "codedeploy_app_name" {
+  description = "CodeDeploy application name"
+  value       = aws_codedeploy_app.ecs_app.name
+}
+
+output "codedeploy_deployment_group_name" {
+  description = "CodeDeploy deployment group name"
+  value       = aws_codedeploy_deployment_group.ecs_dg.deployment_group_name
+}
+
+output "cloudwatch_log_group_name" {
+  description = "Name of the CloudWatch Log Group for ECS"
+  value       = aws_cloudwatch_log_group.karrio.name
 }
