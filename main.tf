@@ -40,24 +40,25 @@ resource "aws_launch_template" "web" {
     #!/bin/bash
     apt-get update
     apt-get install -y nginx nodejs npm
-    git clone https://github.com/oaadonsgithub/micro_service.git /var/www/app
-    cd /var/www/app
-    npm install
-    nohup npm start &
-    cat > /etc/nginx/sites-available/default <<EOL
-    server {
-        listen 80;
-        location / {
-            proxy_pass http://localhost:3000;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade \$http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_set_header Host \$host;
-            proxy_cache_bypass \$http_upgrade;
-        }
-    }
-    EOL
-    systemctl restart nginx
+    git clone https://github.com/karrioapi/karrio.git 
+    apt install -y \
+      ca-certificates \
+      curl \
+      gnupg \
+      lsb-release
+    mkdir -m 0755 -p /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+      gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+    echo \
+      "deb [arch=$(dpkg --print-architecture) \
+      signed-by=/etc/apt/keyrings/docker.gpg] \
+      https://download.docker.com/linux/ubuntu \
+      $(lsb_release -cs) stable" | \
+      tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt update
+    apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin   
+    cd karrio
   EOF
   )
 
