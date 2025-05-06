@@ -15,89 +15,7 @@ provider "aws" {
   region = var.region
 }
 
-resource "aws_launch_template" "web" {
-  name_prefix   = "web-launch-"
-  image_id      = var.ami_id
-  instance_type = var.instance_type
-  key_name      = var.key_name
-
-  network_interfaces {
-    associate_public_ip_address = true
-    security_groups             = [aws_security_group.web_sg.id]
-  }
-
-  block_device_mappings {
-    device_name = "/dev/sda1"  # This is the root volume device for Amazon Linux/Ubuntu
-
-    ebs {
-      volume_size           = 50  # <-- Set your desired size in GiB here
-      volume_type           = "gp3"
-      delete_on_termination = true
-    }
-  }
-
-  user_data = base64encode(<<-EOF
-    #!/bin/bash
-    apt-get update
-    apt-get install -y nginx nodejs npm
-    git clone https://github.com/karrioapi/karrio.git 
-    apt install -y \
-      ca-certificates \
-      curl \
-      gnupg \
-      lsb-release
-    mkdir -m 0755 -p /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
-      gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-
-    echo \
-      "deb [arch=$(dpkg --print-architecture) \
-      signed-by=/etc/apt/keyrings/docker.gpg] \
-      https://download.docker.com/linux/ubuntu \
-      $(lsb_release -cs) stable" | \
-      tee /etc/apt/sources.list.d/docker.list > /dev/null
-    apt update
-    apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin   
-    cd karrio
-  EOF
-  )
-
-  tag_specifications {
-    resource_type = "instance"
-    tags = {
-      Name = "web-instance"
-    }
-  }
-}
-
-resource "aws_security_group" "web_sg" {
-  name        = "web-sg"
-  description = "Allow HTTP and SSH"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-
+####Grant Permission to role 
 
 resource "aws_iam_role" "ecs_role" {
   name               = "ecs_role"
@@ -336,119 +254,233 @@ resource "aws_iam_role_policy" "codedeploy_ecs" {
 
 
 
-resource "aws_autoscaling_group" "web_asg" {
-  name                = "web-asg"
-  desired_capacity    = 2
-  max_size            = 3
-  min_size            = 1
-  vpc_zone_identifier = var.subnet_ids
-  launch_template {
-    id      = aws_launch_template.web.id
-    version = "$Latest"
-  }
-  health_check_type = "EC2"
-  force_delete      = true
-
-  tag {
-    key                 = "Name"
-    value               = "web-asg-instance"
-    propagate_at_launch = true
-  }
-}
-
-resource "aws_lb" "web_lb" {
-  name               = "web-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.web_sg.id]
-  subnets            = var.subnet_ids
-  enable_deletion_protection = false
-}
-
-locals {
-  target_groups = ["green", "blue"]
-  active_index  = index(local.target_groups, var.active_color)
-}
+######create security groups and scalling 
 
 
+# ----------------------------
+# 2. Security Groups
+# ----------------------------
+resource "aws_security_group" "alb_sg" {
+  name        = "alb-sg"
+  vpc_id      = module.vpc.vpc_id
+  description = "Allow HTTP access"
 
-
-resource "aws_lb_target_group" "web_tg" {
-  count        = length(local.target_groups)
-
-  name_prefix = "web${count.index}-"
-  port        = 80
-  protocol    = "HTTP"
-  vpc_id      = var.vpc_id
-  target_type = "instance"
-
-  health_check {
-    path                = "/"
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    timeout             = 5
-    interval            = 10
-    matcher             = "200,301,302,404"
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  lifecycle {
-    # Ensure the name conforms to valid naming rules
-    ignore_changes = [name]
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
+resource "aws_security_group" "ecs_sg" {
+  name   = "ecs-sg"
+  vpc_id = module.vpc.vpc_id
 
-resource "aws_alb_listener" "l_80" {
-  load_balancer_arn = aws_lb.web_lb.arn
-  port              = "80"
-  protocol          = "HTTP"
+  ingress {
+    from_port       = 3000
+    to_port         = 3000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
 
-  default_action {
-    type = "redirect"
-    target_group_arn = aws_lb_target_group.web_tg[0].arn
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# ----------------------------
+# 3. ECS Cluster & IAM
+# ----------------------------
+resource "aws_ecs_cluster" "this" {
+  name = "karrio-cluster"
+}
+
+data "aws_iam_policy_document" "ecs_assume" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
     }
   }
 }
 
-resource "aws_lb_listener" "l_8080" {
-  load_balancer_arn = aws_lb.web_lb.id
-  port              = 8080
+resource "aws_iam_role" "ecs_task_execution" {
+  name               = "ecsTaskExecutionRole"
+  assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_attach" {
+  role       = aws_iam_role.ecs_task_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# ----------------------------
+# 4. Application Load Balancer
+# ----------------------------
+resource "aws_lb" "main" {
+  name               = "ecs-bluegreen-alb"
+  internal           = false
+  load_balancer_type = "application"
+  subnets            = module.vpc.public_subnets
+  security_groups    = [aws_security_group.alb_sg.id]
+}
+
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = 80
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.web_tg[1].arn
+    target_group_arn = aws_lb_target_group_blue.arn
   }
 }
 
-resource "aws_lb_listener" "l_443" {
-  load_balancer_arn = aws_lb.web_lb.arn
-  port              = 443
-  protocol          = "HTTPS"
-  certificate_arn   = var.certificate_arn
+# ----------------------------
+# 5. Target Groups (Blue/Green)
+# ----------------------------
+resource "aws_lb_target_group" "blue" {
+  name        = "blue-tg"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = module.vpc.vpc_id
+  target_type = "ip"
 
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.web_tg[0].arn
+  health_check {
+    path                = "/"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    matcher             = "200"
+  }
+}
+
+resource "aws_lb_target_group" "green" {
+  name        = "green-tg"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = module.vpc.vpc_id
+  target_type = "ip"
+
+  health_check {
+    path                = "/"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    matcher             = "200"
+  }
+}
+
+# ----------------------------
+# 6. ECS Task Definition
+# ----------------------------
+resource "aws_ecs_task_definition" "karrio_task" {
+  family                   = "karrio-task"
+  cpu                      = "256"
+  memory                   = "512"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  execution_role_arn       = aws_iam_role.ecs_task_execution.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "karrio"
+      image     = "123456789012.dkr.ecr.us-west-2.amazonaws.com/karrio:latest"
+      portMappings = [
+        {
+          containerPort = 3000
+          hostPort      = 3000
+          protocol      = "tcp"
+        }
+      ]
+    }
+  ])
+}
+
+# ----------------------------
+# 7. ECS Service with CodeDeploy
+# ----------------------------
+resource "aws_ecs_service" "karrio" {
+  name                               = "karrio-service"
+  cluster                            = aws_ecs_cluster.this.id
+  task_definition                    = aws_ecs_task_definition.karrio_task.arn
+  launch_type                        = "FARGATE"
+  desired_count                      = 1
+  platform_version                   = "LATEST"
+  deployment_controller {
+    type = "CODE_DEPLOY"
   }
 
-  depends_on = [aws_lb_target_group.web_tg]
+  network_configuration {
+    subnets         = module.vpc.public_subnets
+    security_groups = [aws_security_group.ecs_sg.id]
+    assign_public_ip = true
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group_blue.arn
+    container_name   = "karrio"
+    container_port   = 3000
+  }
 
   lifecycle {
-    ignore_changes = [default_action]
+    ignore_changes = [task_definition]
   }
 }
 
-
-resource "aws_autoscaling_attachment" "asg_alb_attachment" {
-  autoscaling_group_name = aws_autoscaling_group.web_asg.name
-  lb_target_group_arn    = aws_lb_target_group.web_tg[local.active_index].arn
+# ----------------------------
+# 8. CodeDeploy Setup
+# ----------------------------
+resource "aws_codedeploy_app" "ecs_app" {
+  name             = "karrio-cd-app"
+  compute_platform = "ECS"
 }
 
+resource "aws_codedeploy_deployment_group" "ecs_dg" {
+  app_name               = aws_codedeploy_app.ecs_app.name
+  deployment_group_name  = "karrio-deploy-group"
+  service_role_arn       = "arn:aws:iam::537124950459:role/CodeDeploy-Service-role"
+  deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
+
+  ecs_service {
+    cluster_name = aws_ecs_cluster.this.name
+    service_name = aws_ecs_service.karrio.name
+  }
+
+  load_balancer_info {
+    target_group_pair_info {
+      target_group {
+        name = aws_lb_target_group_blue.name
+      }
+      target_group {
+        name = aws_lb_target_group_green.name
+      }
+
+      prod_traffic_route {
+        listener_arns = [aws_lb_listener.http.arn]
+      }
+    }
+  }
+
+  auto_rollback_configuration {
+    enabled = true
+    events  = ["DEPLOYMENT_FAILURE"]
+  }
+}
 
 
 

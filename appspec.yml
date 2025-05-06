@@ -1,13 +1,13 @@
+
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0
 
----
-version: 1
+version: 0.0
 Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: "REPLACE_TASK_DEFINITION"
+        TaskDefinition: <TASK_DEFINITION_PLACEHOLDER>
         LoadBalancerInfo:
-          ContainerName: "web"
-          ContainerPort: 80
+          ContainerName: karrio
+          ContainerPort: 3000

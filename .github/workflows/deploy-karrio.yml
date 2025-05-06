@@ -1,0 +1,68 @@
+name: Deploy to Karrio ECS via CodeDeploy
+
+on:
+    workflow_run:
+      workflows: ["Build and Push Docker Image to ECR"]
+      types:
+        - completed
+
+env:
+  AWS_REGION: us-west-1
+  SERVICE_NAME: karrio
+  CLUSTER_NAME: karrio-cluster
+  DEPLOYMENT_GROUP: karrio-deploy-group
+  CODEDEPLOY_APP: karrio-cd-app
+  CONTAINER_NAME: karrio
+  CONTAINER_PORT: 3000
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  deploy:
+    name: Build, Push, and Deploy
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and push Docker image to ECR
+        run: |
+          IMAGE_URI=${{ secrets.ECR_REPO }}:${{ env.IMAGE_TAG }}
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
+
+      - name: Render ECS task definition
+        run: |
+          sed "s|<IMAGE_URI>|${{ secrets.ECR_REPO }}:${{ env.IMAGE_TAG }}|g" taskdef.json > taskdef.rendered.json
+          TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://taskdef.rendered.json | jq -r '.taskDefinition.taskDefinitionArn')
+          echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
+
+      - name: Render AppSpec for CodeDeploy
+        run: |
+          sed "s|<TASK_DEFINITION_PLACEHOLDER>|$TASK_DEF_ARN|g" appspec.yml > appspec.rendered.yml
+
+      - name: Push AppSpec bundle to S3
+        run: |
+          mkdir codedeploy_bundle
+          cp appspec.rendered.yml codedeploy_bundle/appspec.yml
+          zip -r code.zip codedeploy_bundle
+          aws s3 cp code.zip s3://$CODEDEPLOY_BUCKET/code-${{ github.sha }}.zip
+
+      - name: Create CodeDeploy Deployment
+        run: |
+          aws deploy create-deployment \
+            --application-name ${{ env.CODEDEPLOY_APP }} \
+            --deployment-group-name ${{ env.DEPLOYMENT_GROUP }} \
+            --deployment-config-name CodeDeployDefault.ECSAllAtOnce \
+            --revision "revisionType=S3,s3Location={bucket=${{ secrets.CODEDEPLOY_BUCKET }},key=code-${{ github.sha }}.zip,bundleType=zip}"
