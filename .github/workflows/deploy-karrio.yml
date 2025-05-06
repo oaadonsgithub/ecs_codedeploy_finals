@@ -56,6 +56,8 @@ jobs:
           sed "s|<TASK_DEFINITION_PLACEHOLDER>|$TASK_DEF_ARN|g" appspec.yml > appspec.rendered.yml
 
       - name: Push AppSpec bundle to S3
+        env:
+            CODEDEPLOY_BUCKET: ${{ secrets.CODEDEPLOY_BUCKET }}
         run: |
           mkdir codedeploy_bundle
           cp appspec.rendered.yml codedeploy_bundle/appspec.yml
