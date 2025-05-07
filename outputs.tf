@@ -32,3 +32,13 @@ output "cloudwatch_log_group_name" {
   description = "Name of the CloudWatch Log Group for ECS"
   value       = aws_cloudwatch_log_group.karrio.name
 }
+
+
+# Optional output for certificate
+output "certificate_pem" {
+  value = acme_certificate.cert.certificate_pem
+}
+
+output "private_key_pem" {
+  value = tls_private_key.acme_account.private_key_pem
+}

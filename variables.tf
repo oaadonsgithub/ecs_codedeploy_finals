@@ -68,3 +68,7 @@ variable "ECR_REPO_A" {
   description = "Full ECR image URI for the container"
   type        = string
 }
+
+
+variable "aws_access_key" {}
+variable "aws_secret_key" {}

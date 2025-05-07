@@ -608,71 +608,42 @@ resource "aws_iam_user_policy_attachment" "route53_full_access" {
 }
 
 
-
-
-
-data "aws_route53_zone" "selected" {
-  name         = "ianthony.com"
-  private_zone = false
-}
-
+# Route53 Zone
 
 data "aws_route53_zone" "main" {
   name         = "ianthony.com"
   private_zone = false
 }
 
+# TLS Key for ACME Account
 
-
-resource "acme_certificate" "karrio_cert" {
-  account_key_pem = acme_registration.account.account_key_pem
-  common_name     = "karrio.ianthony.com"
-
-  dns_challenge {
-    provider = "route53"
-  }
-}
-
-
-# TLS private key for ACME account
 resource "tls_private_key" "acme_account" {
   algorithm = "RSA"
   rsa_bits  = 2048
 }
 
-# ACME registration with email
-resource "acme_registration" "default" {
+# ACME Registration
+
+resource "acme_registration" "main" {
   account_key_pem    = tls_private_key.acme_account.private_key_pem
   registration_email = "admin@ianthony.com"
 }
 
+# ACME Certificate for Domain
 
-resource "aws_route53_record" "app_dns" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = "karrio.ianthony.com"
-  type    = "A"
+resource "acme_certificate" "cert" {
+  account_key_pem = acme_registration.main.account_key_pem
+  common_name     = "karrio.ianthony.com"
 
-  alias {
-    name                   = aws_lb.web_lb.dns_name
-    zone_id                = aws_lb.web_lb.zone_id
-    evaluate_target_health = true
+  dns_challenge {
+    provider = "route53"
+    config = {
+      AWS_ACCESS_KEY_ID     = var.aws_access_key
+      AWS_SECRET_ACCESS_KEY = var.aws_secret_key
+    }
+    delay_before_challenge = 30
   }
 }
-
-
-resource "aws_acm_certificate" "karrio_uploaded" {
-  private_key       = acme_certificate.karrio_cert.private_key_pem
-  certificate_body  = acme_certificate.karrio_cert.certificate_pem
-  certificate_chain = acme_certificate.karrio_cert.issuer_pem
-
-  tags = {
-    Name = "karrio.ianthony.com"
-    ManagedBy = "Terraform"
-  }
-}
-
-
-
 
 
 
