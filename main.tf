@@ -372,14 +372,44 @@ resource "aws_launch_template" "web" {
     security_groups             = [aws_security_group.web_sg.id]
   }
 
-    user_data = <<-EOF
+    user_data = base64encode(<<-EOF
               #!/bin/bash
               apt-get update -y
               apt-get install -y docker.io git curl nginx certbot python3-certbot-nginx ufw
               systemctl enable docker
               systemctl start docker
-              
-              EOF
+              usermod -aG docker ubuntu
+
+              ufw allow 'Nginx Full'
+              ufw allow OpenSSH
+              ufw --force enable
+
+              su - ubuntu -c "git clone https://github.com/oaadonsgithub/ecs_codedeploy_finals.git /home/ubuntu/hospital-app"
+              cd /home/ubuntu/hospital-app/ecs_codedeploy_finals/hospital-auth-app
+              su - ubuntu -c "docker build -t hospital-app ."
+              su - ubuntu -c "docker run -d -p 5000:5000 --env-file .env hospital-app"
+
+              cat > /etc/nginx/sites-available/karrio.ianthony.com <<EOL
+              server {
+                  listen 80;
+                  server_name karrio.ianthony.com;
+
+                  location / {
+                      proxy_pass http://localhost:5000;
+                      proxy_http_version 1.1;
+                      proxy_set_header Upgrade \$http_upgrade;
+                      proxy_set_header Connection 'upgrade';
+                      proxy_set_header Host \$host;
+                      proxy_cache_bypass \$http_upgrade;
+                  }
+              }
+              EOL
+
+              ln -s /etc/nginx/sites-available/karrio.ianthony.com /etc/nginx/sites-enabled/
+              nginx -t && systemctl restart nginx
+
+              certbot --nginx -d karrio.ianthony.com --non-interactive --agree-tos -m admin@ianthony.com --redirect
+          EOF)
 
   tags = {
     Name = "KarrioHospitalApp"
@@ -389,7 +419,7 @@ resource "aws_launch_template" "web" {
 
 # IAM Role and Instance Profile for ECS EC2 Instances
 resource "aws_iam_role" "web" {
-  name = "qaInstanceRole"
+  name = "webRole"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
