@@ -62,3 +62,9 @@ variable "ECR_REPO" {
   description = "Full ECR image URI for the container"
   type        = string
 }
+
+
+variable "ECR_REPO_A" {
+  description = "Full ECR image URI for the container"
+  type        = string
+}
