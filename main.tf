@@ -378,42 +378,25 @@ apt-get install -y docker.io git curl nginx certbot python3-certbot-nginx ufw
 systemctl enable docker
 systemctl start docker
 usermod -aG docker ubuntu
-
 ufw allow 'Nginx Full'
 ufw allow OpenSSH
 ufw --force enable
-
 su - ubuntu -c "git clone https://github.com/oaadonsgithub/ecs_codedeploy_finals.git /home/ubuntu/app"
 cd /home/ubuntu/app/hospital-auth-app
 npm init -y
+apt install -y nginx
 npm i express body-parser connect-mongo express-session jsonwebtoken mongoose 
 npm install -g nodemon
 npm install dotenv
 npm install passport
 npm install passport-jwt passport
 npm install passport passport-local
+chmod +x setup_ssl.sh
+./setup_ssl.sh
+
 nodemon passport passport-jwt passport-local
 
-cat > /etc/nginx/sites-available/karrio.ianthony.com <<EOL
-server {
-    listen 80;
-    server_name karrio.ianthony.com;
 
-    location / {
-        proxy_pass http://localhost:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
-    }
-}
-EOL
-
-ln -s /etc/nginx/sites-available/karrio.ianthony.com /etc/nginx/sites-enabled/
-nginx -t && systemctl restart nginx
-
-certbot --nginx -d karrio.ianthony.com --non-interactive --agree-tos -m admin@ianthony.com --redirect
 EOF
   )
 
