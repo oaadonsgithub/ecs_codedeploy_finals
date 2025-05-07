@@ -32,7 +32,7 @@ jobs:
       - name: Build and Push Docker Image
         env:
           ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-          IMAGE_NAME: ${{ secrets.ECR_REPO }}
+          IMAGE_NAME: ${{ secrets.ECR_REPO_A }}
         run: |
           IMAGE_URI=$ECR_REGISTRY/$IMAGE_NAME:latest
           echo "Building Docker image: $IMAGE_URI"
