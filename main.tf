@@ -469,7 +469,7 @@ resource "aws_lb_target_group" "web_tg" {
 
 resource "aws_lb_listener" "http_listener" {
   load_balancer_arn = aws_lb.web_lb.arn
-  port              = 80
+  port              = 8081
   protocol          = "HTTP"
   default_action {
     type             = "forward"
