@@ -635,16 +635,16 @@ resource "acme_registration" "main" {
 # ACME Certificate for Domain
 
 resource "acme_certificate" "cert" {
-  account_key_pem = acme_registration.main.account_key_pem
+  account_key_pem = tls_private_key.acme_account.private_key_pem
   common_name     = "karrio.ianthony.com"
 
   dns_challenge {
     provider = "route53"
+
     config = {
       AWS_ACCESS_KEY_ID     = var.AWS_ACCESS_KEY_ID
       AWS_SECRET_ACCESS_KEY = var.AWS_SECRET_ACCESS_KEY
     }
-    delay_before_challenge = 30
   }
 }
 
