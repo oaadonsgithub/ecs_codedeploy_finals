@@ -14,6 +14,7 @@ terraform {
     acme = {
       source  = "vancluever/acme"
       version = "~> 2.9.0"
+      server_url = "https://acme-v02.api.letsencrypt.org/directory"
     }
     aws = {
     source  = "hashicorp/aws"
