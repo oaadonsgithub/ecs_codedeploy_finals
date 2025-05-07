@@ -69,6 +69,3 @@ variable "ECR_REPO_A" {
   type        = string
 }
 
-
-variable "AWS_ACCESS_KEY_ID" {}
-variable "AWS_SECRET_ACCESS_KEY" {}
