@@ -385,8 +385,14 @@ ufw --force enable
 
 su - ubuntu -c "git clone https://github.com/oaadonsgithub/ecs_codedeploy_finals.git /home/ubuntu/app"
 cd /home/ubuntu/app/hospital-auth-app
-su - ubuntu -c "docker build -t hospital-auth-app ."
-su - ubuntu -c "docker run -d -p 5000:5000 --env-file .env hospital-auth-app"
+npm init -y
+npm i express body-parser connect-mongo express-session jsonwebtoken mongoose 
+npm install -g nodemon
+npm install dotenv
+npm install passport
+npm install passport-jwt passport
+npm install passport passport-local
+nodemon passport passport-jwt passport-local
 
 cat > /etc/nginx/sites-available/karrio.ianthony.com <<EOL
 server {
