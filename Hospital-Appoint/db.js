@@ -1,75 +1,75 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-
-//db.js
+// db.js
 
 const mongoose = require('mongoose');
+require('dotenv').config(); // Optional: use .env for Mongo URI
 
-//database connection
-mongoose.connect("mongodb+srv://oaamongose:XDX3WDTyLQdUeFCr@cluster0.spo1bms.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0");
+// MongoDB Atlas connection string
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://oaamongose:XDX3WDTyLQdUeFCr@cluster0.spo1bms.mongodb.net/hospital?retryWrites=true&w=majority&appName=Cluster0";
+
+// Database connection
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
 
 const db = mongoose.connection;
 
-db.on('error', console.error.bind(console, 'connection error:'));
-
-
-db.once('open', function () {
-    console.log("Connection Successful!");
+db.on('error', (err) => {
+  console.error('Connection error:', err);
 });
 
-//model and schema creation
-var PatientSchema = mongoose.Schema({
-    name: String,
-    username: { type: String, unique: true },
-    password: String,
-    age: { type: Number },
-    email: { type: String, unique: true },
-    mobile: { type: Number, unique: true },
+db.once('open', () => {
+  console.log("MongoDB connection successful!");
 });
 
-var DoctorSchema = mongoose.Schema({
-    name: String,
-    username: { type: String, unique: true },
-    password: String,
-    age: { type: Number },
-    email: { type: String, unique: true },
-    mobile: { type: Number, unique: true },
-    speciality: { type: String },
+// Schema definitions
+
+const PatientSchema = new mongoose.Schema({
+  name: String,
+  username: { type: String, unique: true },
+  password: String,
+  age: Number,
+  email: { type: String, unique: true },
+  mobile: { type: Number, unique: true },
 });
 
-var AppointmentSchema = mongoose.Schema({
-    doctorid: { type: mongoose.ObjectId, ref: 'Doctor' },
-    patientid: { type: mongoose.ObjectId },
-    appointmentdate: {
-        type: Date,
-        default: () => new Date("<YYYY-mm-dd>"),
-        required: 'Must Have Appointment Date'
-    },
-    slotnumber: {
-        type: Number,
-        required: 'Must Have Slot Number'
-    }
-}, { timestamps: true })
+const DoctorSchema = new mongoose.Schema({
+  name: String,
+  username: { type: String, unique: true },
+  password: String,
+  age: Number,
+  email: { type: String, unique: true },
+  mobile: { type: Number, unique: true },
+  speciality: String,
+});
 
-var AppointmentAvailabilitySchema = mongoose.Schema({
-    doctorid: { type: mongoose.ObjectId, ref: 'Doctor' },
-    appointmentdate: {
-        type: Date,
-        ref: 'Appointment'
-    },
-    appointmentsavailable: {
-        type: Object
-    }
-}, { timestamps: true })
+const AppointmentSchema = new mongoose.Schema({
+  doctorid: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor' },
+  patientid: { type: mongoose.Schema.Types.ObjectId, ref: 'Patient' },
+  appointmentdate: {
+    type: Date,
+    required: true
+  },
+  slotnumber: {
+    type: Number,
+    required: true
+  }
+}, { timestamps: true });
 
-var Patient = mongoose.model('Patient', PatientSchema, 'patient');
-var Doctor = mongoose.model('Doctor', DoctorSchema, 'doctor');
-var Appointment = mongoose
-                      .model('Appointment', AppointmentSchema, 'appointments');
-var AppointmentAvailability = mongoose
-                              .model('AppointmentAvailability', 
-                                        AppointmentAvailabilitySchema,
-                                     'appointmentavailability');
+const AppointmentAvailabilitySchema = new mongoose.Schema({
+  doctorid: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor' },
+  appointmentdate: { type: Date },
+  appointmentsavailable: Object
+}, { timestamps: true });
 
+// Models
+const Patient = mongoose.model('Patient', PatientSchema, 'patient');
+const Doctor = mongoose.model('Doctor', DoctorSchema, 'doctor');
+const Appointment = mongoose.model('Appointment', AppointmentSchema, 'appointments');
+const AppointmentAvailability = mongoose.model('AppointmentAvailability', AppointmentAvailabilitySchema, 'appointmentavailability');
+
+// Export
 module.exports = { db, Patient, Doctor, Appointment, AppointmentAvailability };
