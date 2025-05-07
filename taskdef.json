@@ -1,22 +1,30 @@
 {
-    "family": "karrio-task",
+    "family": "karrio-taskdef",
     "networkMode": "awsvpc",
     "requiresCompatibilities": ["FARGATE"],
     "cpu": "256",
     "memory": "512",
-    "executionRoleArn": "arn:aws:iam::537124950459:role/ecsTaskExecutionRole",
     "containerDefinitions": [
       {
         "name": "karrio",
-        "image": "<IMAGE_URI>",
+        "image": "537124950459.dkr.ecr.us-west-1.amazonaws.com/karrio_archive",
+        "essential": true,
         "portMappings": [
           {
-            "containerPort": 3000,
+            "containerPort": 80,
             "protocol": "tcp"
           }
         ],
-        "essential": true
+        "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+            "awslogs-group": "/ecs/karrio-taskdef",
+            "awslogs-region": "us-west-1",
+            "awslogs-stream-prefix": "ecs"
+          }
+        }
       }
-    ]
+    ],
+    "executionRoleArn": "arn:aws:iam::537124950459:role/ecsTaskExecutionRole"
   }
   
