@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Book Appointment</title>
+</head>
+<body>
+  <h2>Book an Appointment</h2>
+  <form id="appointmentForm">
+    <label for="doctorid">Doctor ID:</label><br>
+    <input type="text" id="doctorid" name="doctorid" required><br><br>
+
+    <label for="appointmentdate">Date:</label><br>
+    <input type="date" id="appointmentdate" name="appointmentdate" required><br><br>
+
+    <label for="slotnumber">Slot Number (1-11):</label><br>
+    <input type="number" id="slotnumber" name="slotnumber" min="1" max="11" required><br><br>
+
+    <label for="token">JWT Token:</label><br>
+    <input type="text" id="token" name="token" required><br><br>
+
+    <button type="submit">Book</button>
+  </form>
+
+  <div id="response"></div>
+
+  <script>
+    document.getElementById('appointmentForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const data = {
+        doctorid: document.getElementById('doctorid').value,
+        appointmentdate: document.getElementById('appointmentdate').value,
+        slotnumber: document.getElementById('slotnumber').value
+      };
+
+      const token = document.getElementById('token').value;
+
+      const response = await fetch('/bookappointment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+      document.getElementById('response').innerText = JSON.stringify(result, null, 2);
+    });
+  </script>
+</body>
+</html>
