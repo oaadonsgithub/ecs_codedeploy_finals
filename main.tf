@@ -346,15 +346,6 @@ data "aws_acm_certificate" "ssl" {
   most_recent = true
 }
 
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  owners = ["099720109477"]
-  filter {
-    name   = "image-id"
-    values = ["ami-0c12f1613ee864d3f"]
-  }
-}
-
 
 
 # ----------------------------
