@@ -594,7 +594,7 @@ resource "aws_autoscaling_attachment" "asg_alb_attachment" {
   lb_target_group_arn    = aws_lb_target_group.web_tg[local.active_index].arn
 }
 
-resource "aws_iam_user_policy_attachment" "route53_list_zones" {
+resource "aws_iam_user_policy_attachment" "route53_full_access" {
   user       = "oaa_progmatic_01"
   policy_arn = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
 }
