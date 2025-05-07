@@ -26,8 +26,9 @@ provider "aws" {
 
 provider "acme" {
   server_url = "https://acme-v02.api.letsencrypt.org/directory"
-  email      = "admin@ianthony.com"
 }
+
+
 
 
 
@@ -616,14 +617,9 @@ data "aws_route53_zone" "selected" {
 }
 
 
-resource "acme_registration" "account" {
-  account_key_pem = tls_private_key.acme_key.private_key_pem
-  email_address   = "admin@ianthony.com"
-}
-
-resource "tls_private_key" "acme_key" {
-  algorithm = "RSA"
-  rsa_bits  = 2048
+data "aws_route53_zone" "main" {
+  name         = "ianthony.com"
+  private_zone = false
 }
 
 
@@ -638,7 +634,17 @@ resource "acme_certificate" "karrio_cert" {
 }
 
 
+# TLS private key for ACME account
+resource "tls_private_key" "acme_account" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
 
+# ACME registration with email
+resource "acme_registration" "default" {
+  account_key_pem    = tls_private_key.acme_account.private_key_pem
+  registration_email = "admin@ianthony.com"
+}
 
 
 resource "aws_route53_record" "app_dns" {
