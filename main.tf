@@ -1,7 +1,7 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0run
 
-terraform {
+tterraform {
   backend "remote" {
     organization = "oaa_dons"
 
@@ -9,7 +9,15 @@ terraform {
       name = "new_work_place"
     }
   }
+
+  required_providers {
+    acme = {
+      source  = "vancluever/acme"
+      version = "~> 2.9.0"
+    }
+  }
 }
+
 
 provider "aws" {
   region = var.region
