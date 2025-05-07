@@ -383,8 +383,8 @@ ufw allow 'Nginx Full'
 ufw allow OpenSSH
 ufw --force enable
 
-su - ubuntu -c "git clone https://github.com/oaadonsgithub/ecs_codedeploy_finals.git /home/ubuntu"
-cd /home/ubuntu/hospital-auth-app
+su - ubuntu -c "git clone https://github.com/oaadonsgithub/ecs_codedeploy_finals.git /home/ubuntu/app"
+cd /home/ubuntu/app/hospital-auth-app
 su - ubuntu -c "docker build -t hospital-auth-app ."
 su - ubuntu -c "docker run -d -p 5000:5000 --env-file .env hospital-auth-app"
 
