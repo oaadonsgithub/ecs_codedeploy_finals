@@ -384,7 +384,7 @@ ufw allow OpenSSH
 ufw --force enable
 
 su - ubuntu -c "git clone https://github.com/oaadonsgithub/ecs_codedeploy_finals.git /home/ubuntu"
-cd /home/ubuntu/hospital-app/ecs_codedeploy_finals/hospital-auth-app
+cd /home/ubuntu/hospital-app/hospital-auth-app
 su - ubuntu -c "docker build -t hospital-app ."
 su - ubuntu -c "docker run -d -p 5000:5000 --env-file .env hospital-app"
 
