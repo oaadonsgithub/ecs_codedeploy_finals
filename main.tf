@@ -1,7 +1,7 @@
 # Copyright (c) HashiCorp, Inc.
 # SPDX-License-Identifier: MPL-2.0run
 
-tterraform {
+terraform {
   backend "remote" {
     organization = "oaa_dons"
 
