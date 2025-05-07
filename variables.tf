@@ -70,5 +70,5 @@ variable "ECR_REPO_A" {
 }
 
 
-variable "aws_access_key" {}
-variable "aws_secret_key" {}
+variable "AWS_ACCESS_KEY_ID" {}
+variable "AWS_SECRET_ACCESS_KEY" {}

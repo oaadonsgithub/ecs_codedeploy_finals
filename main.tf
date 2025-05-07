@@ -638,8 +638,8 @@ resource "acme_certificate" "cert" {
   dns_challenge {
     provider = "route53"
     config = {
-      AWS_ACCESS_KEY_ID     = var.aws_access_key
-      AWS_SECRET_ACCESS_KEY = var.aws_secret_key
+      AWS_ACCESS_KEY_ID     = var.AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY = var.AWS_SECRET_ACCESS_KEY
     }
     delay_before_challenge = 30
   }
@@ -681,7 +681,7 @@ resource "aws_ecs_task_definition" "karrio_task" {
         logDriver = "awslogs",
         options = {
           awslogs-group         = aws_cloudwatch_log_group.karrio.name,
-          awslogs-region        = "us-west-2",
+          awslogs-region        = "us-west-1",
           awslogs-stream-prefix = "karrio"
         }
       }
