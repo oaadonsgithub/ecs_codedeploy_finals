@@ -349,7 +349,7 @@ data "aws_acm_certificate" "ssl" {
 
 
 # ----------------------------
-# 4. Application Load Balancer
+# 4. Application Load Balancerer
 # ----------------------------
 
 # ----------------------------
