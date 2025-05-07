@@ -441,37 +441,13 @@ resource "aws_lb_target_group" "fargate_tg" {
 
 # For EC2 Auto Scaling Group
 resource "aws_lb_target_group" "ec2_tg" {
-  name        = "ec2-tg"
+  count        = length(local.target_groups)
+  name_prefix = "web${count.index}-"
+
   port        = 80
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "instance"  
-
-  health_check {
-    path = "/"
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-resource "aws_lb_target_group" "web_tg" {
-  count        = length(local.target_groups)
-
-  name_prefix = "web${count.index}-"
-  port        = 80
-  protocol    = "HTTP"
-  vpc_id      = var.vpc_id
-  target_type = "ip"
 
   health_check {
     path                = "/"
@@ -487,6 +463,9 @@ resource "aws_lb_target_group" "web_tg" {
     ignore_changes = [name]
   }
 }
+
+
+
 
 
 resource "aws_alb_listener" "l_80" {
