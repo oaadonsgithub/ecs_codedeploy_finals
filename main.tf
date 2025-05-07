@@ -624,10 +624,13 @@ resource "tls_private_key" "acme_account" {
 
 # ACME Registration
 
+
+
 resource "acme_registration" "main" {
-  account_key_pem    = tls_private_key.acme_account.private_key_pem
-  registration_email = "admin@ianthony.com"
+  account_key_pem = tls_private_key.acme_account.private_key_pem
+  email_address   = "admin@ianthony.com"
 }
+
 
 # ACME Certificate for Domain
 
