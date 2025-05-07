@@ -440,8 +440,10 @@ resource "aws_lb_target_group" "fargate_tg" {
 }
 
 # For EC2 Auto Scaling Group
-resource "aws_lb_target_group" "ec2_tg" {
+resource "aws_lb_target_group" "web_tg" {
+
   count        = length(local.target_groups)
+
   name_prefix = "web${count.index}-"
 
   port        = 80
@@ -463,7 +465,6 @@ resource "aws_lb_target_group" "ec2_tg" {
     ignore_changes = [name]
   }
 }
-
 
 
 
