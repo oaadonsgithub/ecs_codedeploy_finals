@@ -16,11 +16,13 @@ terraform {
       version = "~> 2.9.0"
     }
     aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
+    source  = "hashicorp/aws"
+    version = "~> 4.52.0"
     }
   }
 }
+
+
 
 provider "aws" {
   region = var.region
