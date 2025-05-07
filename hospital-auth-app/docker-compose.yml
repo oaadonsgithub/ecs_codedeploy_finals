@@ -1,0 +1,31 @@
+## Copyright (c) HashiCorp, Inc.
+## SPDX-License-Identifier: MPL-2.0
+
+
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  app:
+    build: .
+    container_name: hospital-auth-app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/hospital
+    volumes:
+      - .:/app
+    command: ["npm", "start"]
+
+volumes:
+  mongo-data:

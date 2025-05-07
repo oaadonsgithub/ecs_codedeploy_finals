@@ -339,6 +339,24 @@ resource "aws_iam_role_policy_attachment" "ecs_task_logs" {
 }
 
 
+
+data "aws_acm_certificate" "ssl" {
+  domain   = "karrio.ianthony.com"
+  statuses = ["ISSUED"]
+  most_recent = true
+}
+
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners = ["099720109477"]
+  filter {
+    name   = "image-id"
+    values = ["ami-0c12f1613ee864d3f"]
+  }
+}
+
+
+
 # ----------------------------
 # 4. Application Load Balancer
 # ----------------------------
@@ -363,11 +381,48 @@ resource "aws_launch_template" "web" {
     security_groups             = [aws_security_group.web_sg.id]
   }
 
-  user_data = base64encode(<<-EOF
+    user_data = <<-EOF
               #!/bin/bash
-              echo "ECS_CLUSTER=${aws_ecs_cluster.this.name}" >> /etc/ecs/ecs.config
+              apt-get update -y
+              apt-get install -y docker.io git curl nginx certbot python3-certbot-nginx ufw
+              systemctl enable docker
+              systemctl start docker
+              usermod -aG docker ubuntu
+
+              ufw allow 'Nginx Full'
+              ufw allow OpenSSH
+              ufw --force enable
+
+              su - ubuntu -c "git clone https://github.com/oaadonsgithub/ecs_codedeploy_finals.git /home/ubuntu/hospital-app"
+              cd /home/ubuntu/hospital-app/ecs_codedeploy_finals/hospital-auth-app
+              su - ubuntu -c "docker build -t hospital-app ."
+              su - ubuntu -c "docker run -d -p 5000:5000 --env-file .env hospital-app"
+
+              cat > /etc/nginx/sites-available/karrio.ianthony.com <<EOL
+              server {
+                  listen 80;
+                  server_name karrio.ianthony.com;
+
+                  location / {
+                      proxy_pass http://localhost:5000;
+                      proxy_http_version 1.1;
+                      proxy_set_header Upgrade \$http_upgrade;
+                      proxy_set_header Connection 'upgrade';
+                      proxy_set_header Host \$host;
+                      proxy_cache_bypass \$http_upgrade;
+                  }
+              }
+              EOL
+
+              ln -s /etc/nginx/sites-available/karrio.ianthony.com /etc/nginx/sites-enabled/
+              nginx -t && systemctl restart nginx
+
+              certbot --nginx -d karrio.ianthony.com --non-interactive --agree-tos -m admin@ianthony.com --redirect
               EOF
-  )
+
+  tags = {
+    Name = "KarrioHospitalApp"
+  }
 }
 
 
@@ -462,7 +517,7 @@ resource "aws_lb_target_group" "web_tg" {
 
   name_prefix = "web${count.index}-"
 
-  port        = 80
+  port        = 5000
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "instance"  
@@ -543,6 +598,38 @@ resource "aws_autoscaling_attachment" "asg_alb_attachment" {
   autoscaling_group_name = aws_autoscaling_group.web_asg.name
   lb_target_group_arn    = aws_lb_target_group.web_tg[local.active_index].arn
 }
+
+
+
+
+
+resource "aws_route53_record" "app_dns" {
+  zone_id = "Z1014554CTV220NV1IP3"
+  name    = "karrio.ianthony.com"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.web_lb.dns_name
+    zone_id                = aws_lb.web_lb.zone_id
+    evaluate_target_health = true
+  }
+}
+
+
+
+resource "aws_route53_record" "karrio_subdomain" {
+  zone_id = "Z1014554CTV220NV1IP3"
+  name    = "karrio.ianthony.com"
+  type    = "A"
+  ttl     = 300
+  records = [aws_instance.web.public_ip]
+}
+
+
+
+
+
+
 
 # ----------------------------
 # 6. ECS Task Definition

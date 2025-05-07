@@ -1,15 +1,12 @@
 // Copyright (c) HashiCorp, Inc.
 // SPDX-License-Identifier: MPL-2.0
 
-// db.js
 
 const mongoose = require('mongoose');
-require('dotenv').config(); // Optional: use .env for Mongo URI
+require('dotenv').config();
 
-// MongoDB Atlas connection string
 const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://oaamongose:XDX3WDTyLQdUeFCr@cluster0.spo1bms.mongodb.net/hospital?retryWrites=true&w=majority&appName=Cluster0";
 
-// Database connection
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -24,8 +21,6 @@ db.on('error', (err) => {
 db.once('open', () => {
   console.log("MongoDB connection successful!");
 });
-
-// Schema definitions
 
 const PatientSchema = new mongoose.Schema({
   name: String,
@@ -65,11 +60,9 @@ const AppointmentAvailabilitySchema = new mongoose.Schema({
   appointmentsavailable: Object
 }, { timestamps: true });
 
-// Models
 const Patient = mongoose.model('Patient', PatientSchema, 'patient');
 const Doctor = mongoose.model('Doctor', DoctorSchema, 'doctor');
 const Appointment = mongoose.model('Appointment', AppointmentSchema, 'appointments');
 const AppointmentAvailability = mongoose.model('AppointmentAvailability', AppointmentAvailabilitySchema, 'appointmentavailability');
 
-// Export
 module.exports = { db, Patient, Doctor, Appointment, AppointmentAvailability };
