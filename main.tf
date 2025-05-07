@@ -391,7 +391,7 @@ resource "aws_autoscaling_group" "web_asg" {
   max_size            = 2
   min_size            = 1
   vpc_zone_identifier = var.subnet_ids
-  target_group_arns         = aws_lb_target_group.web_tg[0].arn
+  target_group_arns         = [aws_lb_target_group.web_tg[0].arn]
 
 
   launch_template {
