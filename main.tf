@@ -412,9 +412,6 @@ resource "aws_launch_template" "web" {
   certbot --nginx -d karrio.ianthony.com --non-interactive --agree-tos -m admin@ianthony.com --redirect
 EOF)
 
-
-
-
   tags = {
     Name = "KarrioHospitalApp"
   }
@@ -616,13 +613,6 @@ resource "aws_route53_record" "app_dns" {
 
 
 
-
-
-
-
-
-
-
 # ----------------------------
 # 6. ECS Task Definition
 # ----------------------------
@@ -760,6 +750,7 @@ resource "aws_codedeploy_deployment_group" "ecs_dg" {
 
 }
 
+
 resource "aws_ecr_repository" "web_ecr_repo" {
   name         = "karrio"
   force_delete = true
@@ -792,6 +783,7 @@ resource "aws_cloudwatch_log_metric_filter" "ecs_errors" {
     value     = "1"
   }
 }
+
 
 
 resource "aws_cloudwatch_metric_alarm" "ecs_error_alarm" {
