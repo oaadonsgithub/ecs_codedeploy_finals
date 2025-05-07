@@ -639,12 +639,7 @@ resource "acme_certificate" "cert" {
   common_name     = "karrio.ianthony.com"
 
   dns_challenge {
-    provider = "route53"
-
-    config = {
-      AWS_ACCESS_KEY_ID     = var.AWS_ACCESS_KEY_ID
-      AWS_SECRET_ACCESS_KEY = var.AWS_SECRET_ACCESS_KEY
-    }
+  provider = "route53"
   }
 }
 
