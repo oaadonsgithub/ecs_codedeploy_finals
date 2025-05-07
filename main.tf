@@ -617,14 +617,6 @@ resource "aws_route53_record" "app_dns" {
 
 
 
-resource "aws_route53_record" "karrio_subdomain" {
-  zone_id = "Z1014554CTV220NV1IP3"
-  name    = "karrio.ianthony.com"
-  type    = "A"
-  ttl     = 300
-  records = [aws_instance.web.public_ip]
-}
-
 
 
 
