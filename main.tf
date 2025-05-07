@@ -15,6 +15,14 @@ provider "aws" {
   region = var.region
 }
 
+
+provider "acme" {
+  server_url = "https://acme-v02.api.letsencrypt.org/directory"
+  email      = "admin@ianthony.com"
+}
+
+
+
 ####Grant Permission to role 
 
 resource "aws_iam_role" "ecs_role" {
@@ -385,6 +393,8 @@ su - ubuntu -c "git clone https://github.com/oaadonsgithub/ecs_codedeploy_finals
 cd /home/ubuntu/app/hospital-auth-app
 npm init -y
 apt install -y nginx
+sudo ufw allow 'Nginx HTTP'
+sudo ufw reload
 npm i express body-parser connect-mongo express-session jsonwebtoken mongoose 
 npm install -g nodemon
 npm install dotenv
@@ -588,9 +598,40 @@ resource "aws_iam_user_policy_attachment" "route53_full_access" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
 }
 
-data "aws_route53_zone" "main" {
-  name = "ianthony.com"
+
+
+
+
+data "aws_route53_zone" "selected" {
+  name         = "ianthony.com"
+  private_zone = false
 }
+
+
+resource "acme_registration" "account" {
+  account_key_pem = tls_private_key.acme_key.private_key_pem
+  email_address   = "admin@ianthony.com"
+}
+
+resource "tls_private_key" "acme_key" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
+
+
+resource "acme_certificate" "karrio_cert" {
+  account_key_pem = acme_registration.account.account_key_pem
+  common_name     = "karrio.ianthony.com"
+
+  dns_challenge {
+    provider = "route53"
+  }
+}
+
+
+
+
 
 resource "aws_route53_record" "app_dns" {
   zone_id = data.aws_route53_zone.main.zone_id
@@ -603,6 +644,19 @@ resource "aws_route53_record" "app_dns" {
     evaluate_target_health = true
   }
 }
+
+
+resource "aws_acm_certificate" "karrio_uploaded" {
+  private_key       = acme_certificate.karrio_cert.private_key_pem
+  certificate_body  = acme_certificate.karrio_cert.certificate_pem
+  certificate_chain = acme_certificate.karrio_cert.issuer_pem
+
+  tags = {
+    Name = "karrio.ianthony.com"
+    ManagedBy = "Terraform"
+  }
+}
+
 
 
 
