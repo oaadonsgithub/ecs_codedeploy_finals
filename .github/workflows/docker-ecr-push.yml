@@ -2,7 +2,7 @@ name: Build and Push Docker Image to ECR
 
 on:
   workflow_run:
-    workflows: ["Terraform CI/CD"]        # must match the name in the infra.yml file
+    workflows: ["Terraform CI/CD"]        # must match the name in the infra.yml filepush
     types:
       - completed
 
