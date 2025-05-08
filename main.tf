@@ -631,7 +631,6 @@ resource "tls_private_key" "acme_account" {
 resource "acme_registration" "main" {
   account_key_pem         = tls_private_key.acme_account.private_key_pem
   email_address           = "admin+new@ianthony.com"  # <- use a new or valid email
-  terms_of_service_agreed = true
 }
 
 
@@ -639,7 +638,7 @@ resource "acme_registration" "main" {
 # ACME Certificate for Domain
 
 resource "acme_certificate" "cert" {
-  account_key_pem = tls_private_key.acme_account2.private_key_pem
+  account_key_pem = tls_private_key.acme_account.private_key_pem
   common_name     = "karrio.ianthony.com"
 
   dns_challenge {
