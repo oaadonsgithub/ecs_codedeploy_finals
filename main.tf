@@ -623,13 +623,13 @@ data "aws_route53_zone" "main" {
 # TLS Key for ACME Account
 
 
-resource "tls_private_key" "acme_account" {
+resource "tls_private_key" "acme_reg" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
 resource "acme_registration" "main" {
-  account_key_pem         = tls_private_key.acme_account.private_key_pem
+  account_key_pem         = tls_private_key.acme_reg.private_key_pem
   email_address           = "admin+new@ianthony.com"  # <- use a new or valid email
 }
 
@@ -638,7 +638,7 @@ resource "acme_registration" "main" {
 # ACME Certificate for Domain
 
 resource "acme_certificate" "cert" {
-  account_key_pem = tls_private_key.acme_account.private_key_pem
+  account_key_pem = tls_private_key.acme_reg.private_key_pem
   common_name     = "karrio.ianthony.com"
 
   dns_challenge {
