@@ -386,7 +386,7 @@ resource "tls_private_key" "account_key" {
 
 resource "acme_registration" "reg" {
   account_key_pem = tls_private_key.account_key.private_key_pem
-  email           = "you@example.com"
+  email_address          = "you@example.com"
 }
 
 
