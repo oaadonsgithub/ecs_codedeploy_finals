@@ -377,24 +377,37 @@ resource "aws_iam_role_policy_attachment" "ecs_task_logs" {
 # ----------------------------
 # 4. DNS & SSL Certificate
 # ----------------------------
-
 resource "aws_route53_zone" "main" {
-  name = "ianthony.com"  # Optional: only needed if you want to manage the hosted zone too
+  name = "ianthony.com"
 }
-
 
 resource "tls_private_key" "account_key" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
+provider "acme" {
+  server_url = "https://acme-v02.api.letsencrypt.org/directory"
+}
 
 resource "acme_registration" "reg" {
   account_key_pem = tls_private_key.account_key.private_key_pem
-  email_address          = "admin@ianthony.com"
+  email           = "admin@ianthony.com"
 }
 
-# ACM Certificate for subdomain
+# ⚠️ INSERTED: Request cert from Let's Encrypt
+resource "acme_certificate" "cert" {
+  account_key_pem = tls_private_key.account_key.private_key_pem
+  common_name     = "karrio.ianthony.com"
+
+  dns_challenge {
+    provider = "route53"
+  }
+
+  depends_on = [acme_registration.reg]
+}
+
+# Optional: You are also creating a cert in AWS ACM
 resource "aws_acm_certificate" "cert" {
   domain_name       = "karrio.ianthony.com"
   validation_method = "DNS"
@@ -424,14 +437,12 @@ resource "aws_route53_record" "cert_validation" {
   ttl     = 60
 }
 
-
 resource "aws_acm_certificate_validation" "cert" {
   certificate_arn         = aws_acm_certificate.cert.arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
-
-# Save cert to disk
+# Save Let's Encrypt cert to disk
 resource "local_file" "cert_pem" {
   content  = acme_certificate.cert.certificate_pem
   filename = "${path.module}/cert.pem"
@@ -441,7 +452,6 @@ resource "local_file" "key_pem" {
   content  = acme_certificate.cert.private_key_pem
   filename = "${path.module}/key.pem"
 }
-
 
 
 
