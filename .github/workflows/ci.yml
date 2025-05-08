@@ -24,7 +24,7 @@ jobs:
 
       - name: Install Copywrite
         id: install
-        uses: hashicorp/setup-copywrite@v1.0.0
+        uses: hashicorp/setup-copywrite@v1.1.3
 
       - name: Output Installed Copywrite Version
         run: echo "Installed Copywrite CLI ${{ steps.install.outputs.version }}"
