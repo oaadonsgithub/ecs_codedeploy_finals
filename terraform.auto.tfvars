@@ -14,5 +14,6 @@ image_uri       = "537124950459.dkr.ecr.us-west-1.amazonaws.com/karrio:latest"
 sns_alert_email = "oaaderibigbe@dons.usfca.edu"
 ECR_REPO = "537124950459.dkr.ecr.us-west-1.amazonaws.com/karrio:latest"
 ECR_REPO_A = "537124950459.dkr.ecr.us-west-1.amazonaws.com/karrio_archive:latest"
+domain_name = "karrio.ianthony.com"
 
 
