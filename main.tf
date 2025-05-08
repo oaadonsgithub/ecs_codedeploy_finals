@@ -6,7 +6,7 @@ terraform {
     organization = "oaa_dons"
 
     workspaces {
-      name = "new_work_place"
+      name = "ci_automations"
     }
   }
 
