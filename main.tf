@@ -386,7 +386,7 @@ provider "acme" {
 
 resource "acme_registration" "reg" {
   account_key_pem = tls_private_key.account_key.private_key_pem
-  email           = "admin@ianthony.com"
+  email_address           = "admin@ianthony.com"
 }
 
 # ⚠️ INSERTED: Request cert from Let's Encrypt
