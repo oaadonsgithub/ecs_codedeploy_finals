@@ -372,20 +372,50 @@ resource "aws_iam_role_policy_attachment" "ecs_task_logs" {
 # 4. DNS & SSL Certificate
 # ----------------------------
 
-data "aws_acm_certificate" "ssl" {
-  domain   = "karrio.ianthony.com"
-  statuses = ["ISSUED"]
-  most_recent = true
+resource "aws_route53_zone" "main" {
+  name = "ianthony.com"  # Optional: only needed if you want to manage the hosted zone too
+}
+
+# ACM Certificate for subdomain
+resource "aws_acm_certificate" "cert" {
+  domain_name       = "karrio.ianthony.com"
+  validation_method = "DNS"
+
+  tags = {
+    Environment = "prod"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# DNS record to validate certificate
+resource "aws_route53_record" "cert_validation" {
+  name    = aws_acm_certificate.cert.domain_validation_options[0].resource_record_name
+  type    = aws_acm_certificate.cert.domain_validation_options[0].resource_record_type
+  zone_id = aws_route53_zone.main.zone_id
+  records = [aws_acm_certificate.cert.domain_validation_options[0].resource_record_value]
+  ttl     = 60
+}
+
+# Validate the certificate
+resource "aws_acm_certificate_validation" "cert" {
+  certificate_arn         = aws_acm_certificate.cert.arn
+  validation_record_fqdns = [aws_route53_record.cert_validation.fqdn]
 }
 
 
-resource "tls_private_key" "account_key0" {
+
+
+
+resource "tls_private_key" "account_key" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
 resource "acme_registration" "reg" {
-  account_key_pem = tls_private_key.account_key0.private_key_pem
+  account_key_pem = tls_private_key.account_key.private_key_pem
   email_address          = "admin@ianthony.com"
 }
 
@@ -562,15 +592,17 @@ resource "aws_lb_target_group" "web_tg" {
 }
 
 
-resource "aws_lb_listener" "http_listener" {
-  load_balancer_arn = aws_lb.web_lb.arn
-  port              = 8081
-  protocol          = "HTTP"
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.fargate_tg.arn  
-  }
-}
+#resource "aws_lb_listener" "http_listener" {
+#  load_balancer_arn = aws_lb.web_lb.arn
+#  port              = 8081
+#  protocol          = "HTTP"
+#  default_action {
+#    type             = "forward"
+#    target_group_arn = aws_lb_target_group.fargate_tg.arn  
+#  }
+#}
+
+
 
 resource "aws_alb_listener" "l_80" {
   load_balancer_arn = aws_lb.web_lb.arn
@@ -603,11 +635,11 @@ resource "aws_lb_listener" "l_443" {
   load_balancer_arn = aws_lb.web_lb.arn
   port              = 443
   protocol          = "HTTPS"
-  certificate_arn   = var.certificate_arn
+  certificate_arn   = aws_acm_certificate_validation.cert.certificate_arn
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.web_tg[0].arn
+    target_group_arn = aws_lb_target_group.fargate_tg.arn
   }
 
   depends_on = [aws_lb_target_group.web_tg]
