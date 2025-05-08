@@ -1,5 +1,5 @@
 # Copyright (c) HashiCorp, Inc.
-# SPDX-License-Identifier: MPL-2.0run
+# SPDX-License-Identifier: MPL-2.0run_makesomechanges
 
 terraform {
   backend "remote" {
