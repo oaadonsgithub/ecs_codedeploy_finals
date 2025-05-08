@@ -623,21 +623,17 @@ data "aws_route53_zone" "main" {
 # TLS Key for ACME Account
 
 
-
-
-resource "tls_private_key" "acme_account2" {
+resource "tls_private_key" "acme_account" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
-# ACME Registration
-
-
-
 resource "acme_registration" "main" {
-  account_key_pem = tls_private_key.acme_account2.private_key_pem
-  email_address   = "admin@ianthony.com"
+  account_key_pem         = tls_private_key.acme_account.private_key_pem
+  email_address           = "admin+new@ianthony.com"  # <- use a new or valid email
+  terms_of_service_agreed = true
 }
+
 
 
 # ACME Certificate for Domain
