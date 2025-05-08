@@ -294,7 +294,13 @@ resource "aws_security_group" "web_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
+    
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   ingress {
     from_port   = 3000
@@ -376,6 +382,18 @@ resource "aws_route53_zone" "main" {
   name = "ianthony.com"  # Optional: only needed if you want to manage the hosted zone too
 }
 
+
+resource "tls_private_key" "account_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+
+resource "acme_registration" "reg" {
+  account_key_pem = tls_private_key.account_key.private_key_pem
+  email_address          = "admin@ianthony.com"
+}
+
 # ACM Certificate for subdomain
 resource "aws_acm_certificate" "cert" {
   domain_name       = "karrio.ianthony.com"
@@ -413,16 +431,21 @@ resource "aws_acm_certificate_validation" "cert" {
 }
 
 
-
-resource "tls_private_key" "account_key" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
+# Save cert to disk
+resource "local_file" "cert_pem" {
+  content  = acme_certificate.cert.certificate_pem
+  filename = "${path.module}/cert.pem"
 }
 
-resource "acme_registration" "reg" {
-  account_key_pem = tls_private_key.account_key.private_key_pem
-  email_address          = "admin@ianthony.com"
+resource "local_file" "key_pem" {
+  content  = acme_certificate.cert.private_key_pem
+  filename = "${path.module}/key.pem"
 }
+
+
+
+
+
 
 
 
@@ -446,34 +469,26 @@ resource "aws_launch_template" "web" {
   }
 
   user_data = base64encode(<<EOF
-#!/bin/bash
-apt-get update -y
-apt-get install -y docker.io git curl nginx certbot python3-certbot-nginx ufw
-systemctl enable docker
-systemctl start docker
-usermod -aG docker ubuntu
-ufw allow 'Nginx Full'
-ufw allow OpenSSH
-ufw --force enable
-su - ubuntu -c "git clone https://github.com/oaadonsgithub/ecs_codedeploy_finals.git /home/ubuntu/app"
-cd /home/ubuntu/app/hospital-auth-app
-npm init -y
-apt install -y nginx
-sudo ufw allow 'Nginx HTTP'
-sudo ufw reload
-npm i express body-parser connect-mongo express-session jsonwebtoken mongoose 
-npm install -g nodemon
-npm install dotenv
-npm install passport
-npm install passport-jwt passport
-npm install passport passport-local
-chmod +x setup_ssl.sh
-./setup_ssl.sh
+              #!/bin/bash
+              apt update
+              apt install -y nginx
+              mkdir -p /etc/nginx/ssl
+              echo '${acme_certificate.cert.certificate_pem}' > /etc/nginx/ssl/cert.pem
+              echo '${acme_certificate.cert.private_key_pem}' > /etc/nginx/ssl/key.pem
+              cat > /etc/nginx/sites-available/default <<EOL
+              server {
+                  listen 443 ssl;
+                  server_name ${var.domain_name};
+                  ssl_certificate /etc/nginx/ssl/cert.pem;
+                  ssl_certificate_key /etc/nginx/ssl/key.pem;
 
-nodemon passport passport-jwt passport-local
-
-
-EOF
+                  location / {
+                      return 200 "Hello from secure Nginx!";
+                  }
+              }
+              EOL
+              systemctl restart nginx
+              EOF
   )
 
   tags = {
