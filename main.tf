@@ -379,14 +379,14 @@ data "aws_acm_certificate" "ssl" {
 }
 
 
-resource "tls_private_key" "account_key" {
+resource "tls_private_key" "account_key0" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
 resource "acme_registration" "reg" {
-  account_key_pem = tls_private_key.account_key.private_key_pem
-  email_address          = "you@example.com"
+  account_key_pem = tls_private_key.account_key0.private_key_pem
+  email_address          = "admin@ianthony.com"
 }
 
 
