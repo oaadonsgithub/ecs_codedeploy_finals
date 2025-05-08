@@ -362,6 +362,16 @@ resource "aws_iam_role_policy_attachment" "ecs_task_logs" {
 
 
 
+
+
+
+
+
+
+# ----------------------------
+# 4. DNS & SSL Certificate
+# ----------------------------
+
 data "aws_acm_certificate" "ssl" {
   domain   = "karrio.ianthony.com"
   statuses = ["ISSUED"]
@@ -369,13 +379,20 @@ data "aws_acm_certificate" "ssl" {
 }
 
 
+resource "tls_private_key" "account_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "acme_registration" "reg" {
+  account_key_pem = tls_private_key.account_key.private_key_pem
+  email           = "you@example.com"
+}
+
+
 
 # ----------------------------
-# 4. Application Load Balancer
-# ----------------------------
-
-# ----------------------------
-# 5. Target Groups (Blue/Green)
+# 5. Target Groups (Blue/Green) & load balancer
 # ----------------------------
 
 resource "aws_launch_template" "web" {
@@ -460,7 +477,6 @@ resource "aws_iam_instance_profile" "web" {
   name = "qaInstanceProfile"
   role = aws_iam_role.web.name
 }
-
 
 
 
