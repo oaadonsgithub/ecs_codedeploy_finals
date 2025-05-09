@@ -662,7 +662,7 @@ resource "aws_alb_listener" "http_redirect" {
 }
 
 
-resource "aws_alb_listener" "https_listener" {
+resource "aws_alb_listener" "l_80" {
   load_balancer_arn = aws_lb.web_lb.arn
   port              = "443"
   protocol          = "HTTPS"
