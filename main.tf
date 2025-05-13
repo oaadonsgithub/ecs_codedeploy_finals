@@ -654,7 +654,7 @@ resource "aws_lb_target_group" "web_tg" {
 #
 
 
-resource "aws_alb_listener" "http_redirect" {
+resource "aws_lb_listener" "http_redirect" {
   load_balancer_arn = aws_lb.web_alb.arn
   port              = "80"
   protocol          = "HTTP"
@@ -816,7 +816,7 @@ resource "aws_codedeploy_deployment_group" "ecs_dg" {
     }
 
     prod_traffic_route {
-      listener_arns = [aws_alb_listener.https.arn]
+      listener_arns = [aws_lb_listener.https.arn]
     }
   }
 }
