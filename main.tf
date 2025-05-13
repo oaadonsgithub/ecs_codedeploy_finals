@@ -816,7 +816,7 @@ resource "aws_codedeploy_deployment_group" "ecs_dg" {
     }
 
     prod_traffic_route {
-      listener_arns = [aws_alb_listener.l_80.arn]
+      listener_arns = [aws_alb_listener.https.arn]
     }
   }
 }
