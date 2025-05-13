@@ -565,7 +565,7 @@ resource "aws_autoscaling_group" "web_asg" {
   }
 }
 
-resource "aws_lb" "web_lb" {
+resource "aws_lb" "web_alb" {
   name               = "web-alb"
   internal           = false
   load_balancer_type = "application"
@@ -655,7 +655,7 @@ resource "aws_lb_target_group" "web_tg" {
 
 
 resource "aws_alb_listener" "http_redirect" {
-  load_balancer_arn = aws_lb.web_lb.arn
+  load_balancer_arn = aws_lb.web_alb.arn
   port              = "80"
   protocol          = "HTTP"
 
