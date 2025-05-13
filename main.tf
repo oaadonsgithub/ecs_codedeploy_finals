@@ -680,7 +680,7 @@ resource "aws_lb_listener" "https" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.web_tg[count.index].arn
+    target_group_arn = aws_lb_target_group.web_tg[0].arn
   }
 }
 
