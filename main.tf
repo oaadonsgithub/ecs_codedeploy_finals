@@ -680,7 +680,7 @@ resource "aws_lb_listener" "https" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.web_tg.arn
+    target_group_arn = aws_lb_target_group.web_tg[count.index].arn
   }
 }
 
@@ -688,34 +688,6 @@ resource "aws_lb_listener" "https" {
 
 
 
-resource "aws_lb_listener" "l_8080" {
-  load_balancer_arn = aws_lb.web_lb.id
-  port              = 8080
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.web_tg[1].arn
-  }
-}
-
-resource "aws_lb_listener" "l_443" {
-  load_balancer_arn = aws_lb.web_lb.arn
-  port              = 443
-  protocol          = "HTTPS"
-  certificate_arn   = var.certificate_arn
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.fargate_tg.arn
-  }
-
-  depends_on = [aws_lb_target_group.web_tg]
-
-  lifecycle {
-    ignore_changes = [default_action]
-  }
-}
 
 
 resource "aws_autoscaling_attachment" "asg_alb_attachment" {
