@@ -436,6 +436,14 @@ resource "aws_acm_certificate" "cert" {
 #  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 #}
 
+resource "aws_acm_certificate" "imported_cert" {
+  private_key       = acme_certificate.cert.private_key_pem
+  certificate_body  = acme_certificate.cert.certificate_pem
+  certificate_chain = acme_certificate.cert.issuer_pem
+}
+
+
+
 # Save Let's Encrypt cert to disk
 resource "local_file" "cert_pem" {
   content  = acme_certificate.cert.certificate_pem
@@ -662,16 +670,17 @@ resource "aws_alb_listener" "http_redirect" {
 }
 
 
-resource "aws_alb_listener" "l_80" {
-  load_balancer_arn = aws_lb.web_lb.arn
-  port              = "443"
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.web_alb.arn
+  port              = 443
   protocol          = "HTTPS"
+
   ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = aws_acm_certificate.cert.arn  # ← your ACM cert here
+  certificate_arn   = aws_acm_certificate.imported_cert.arn
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.fargate_tg.arn
+    target_group_arn = aws_lb_target_group.web_tg.arn
   }
 }
 
