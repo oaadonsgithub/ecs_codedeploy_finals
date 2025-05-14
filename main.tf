@@ -389,17 +389,6 @@ resource "acme_registration" "reg" {
   email_address           = "admin@ianthony.com"
 }
 
-#INSERTED: Request cert from Let's Encrypt
-resource "acme_certificate" "cert" {
-  account_key_pem = tls_private_key.account_key.private_key_pem
-  common_name     = "karrio.ianthony.com"
-
-  dns_challenge {
-    provider = "route53"
-  }
-
-  depends_on = [acme_registration.reg]
-}
 
 # Optional: You are also creating a cert in AWS ACM
 resource "aws_acm_certificate" "cert" {
