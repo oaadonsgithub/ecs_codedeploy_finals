@@ -415,26 +415,6 @@ resource "aws_acm_certificate" "cert" {
   }
 }
 
-#resource "aws_route53_record" "cert_validation" {
-#  for_each = {
-#    for dvo in aws_acm_certificate.cert.domain_validation_options : dvo.domain_name => {
-#      name   = dvo.resource_record_name
-#      type   = dvo.resource_record_type
-#      record = dvo.resource_record_value
-#    }
-#  }
-#
-#  zone_id = aws_route53_zone.main.zone_id
-#  name    = each.value.name
-#  type    = each.value.type
-#  records = [each.value.record]
-#  ttl     = 60
-#}
-
-#resource "aws_acm_certificate_validation" "cert" {
-#  certificate_arn         = aws_acm_certificate.cert.arn
-#  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
-#}
 
 resource "aws_acm_certificate" "imported_cert" {
   private_key       = acme_certificate.cert.private_key_pem
@@ -458,6 +438,14 @@ resource "local_file" "key_pem" {
 
 
 
+resource "acme_certificate" "cert" {
+  account_key_pem = acme_registration.reg.account_key_pem
+  common_name     = "karrio.ianthony.com"
+
+  dns_challenge {
+    provider = "route53"
+  }
+}
 
 
 
@@ -687,7 +675,7 @@ resource "aws_ecs_service" "app" {
   load_balancer {
     target_group_arn = aws_lb_target_group.blue.arn
     container_name   = "karrio"
-    container_port   = 80
+    container_port   = 3000
   }
 
   desired_count = 1
