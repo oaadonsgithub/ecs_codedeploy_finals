@@ -661,6 +661,13 @@ resource "aws_ecs_task_definition" "karrio_task" {
 # 7. ECS Service with CodeDeploy
 # ----------------------------
 
+resource "aws_ecs_cluster" "main" {
+  name = "karrio-cluster"
+}
+
+
+
+
 resource "aws_ecs_service" "app" {
   name            = "karrio-service"
   cluster         = aws_ecs_cluster.main.id
@@ -672,7 +679,7 @@ resource "aws_ecs_service" "app" {
   }
 
   network_configuration {
-    subnets         = var.private_subnets
+    subnets         = var.subnet_ids
     security_groups = [aws_security_group.web_sg.id]
     assign_public_ip = false
   }
