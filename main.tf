@@ -542,29 +542,6 @@ resource "aws_iam_instance_profile" "web" {
 
 
 
-resource "aws_autoscaling_group" "web_asg" {
-  name                = "web-asg"
-  desired_capacity    = 1
-  max_size            = 2
-  min_size            = 1
-  vpc_zone_identifier = var.subnet_ids
-  target_group_arns         = [aws_lb_target_group.web_tg[0].arn]
-
-
-  launch_template {
-    id      = aws_launch_template.web.id
-    version = "$Latest"
-  }
-  health_check_type = "EC2"
-  force_delete      = true
-
-  tag {
-    key                 = "Name"
-    value               = "web-asg-instance"
-    propagate_at_launch = true
-  }
-}
-
 resource "aws_lb" "web_alb" {
   name               = "web-alb"
   internal           = false
@@ -687,7 +664,7 @@ resource "aws_ecs_task_definition" "karrio_task" {
 resource "aws_ecs_service" "app" {
   name            = "karrio-service"
   cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.karrio.arn
+  task_definition = aws_ecs_task_definition.karrio_task.arn
   launch_type     = "FARGATE"
 
   deployment_controller {
@@ -696,7 +673,7 @@ resource "aws_ecs_service" "app" {
 
   network_configuration {
     subnets         = var.private_subnets
-    security_groups = [aws_security_group.ecs_service.id]
+    security_groups = [aws_security_group.web_sg.id]
     assign_public_ip = false
   }
 

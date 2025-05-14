@@ -7,11 +7,6 @@ output "ecs_cluster_name" {
   value       = aws_ecs_cluster.this.name
 }
 
-output "ecs_service_name" {
-  description = "The name of the ECS service"
-  value       = aws_ecs_service.karrio.name
-}
-
 
 
 
